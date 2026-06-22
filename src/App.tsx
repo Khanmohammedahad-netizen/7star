@@ -11,9 +11,9 @@ import EmployeesPage from './pages/EmployeesPage';
 import EmployeeDetailPage from './pages/EmployeeDetailPage';
 import UsersPage from './pages/UsersPage';
 import MaterialsPage from './pages/MaterialsPage';
+import QuotationsPage from './pages/QuotationsPage';
+import InvoicesPage from './pages/InvoicesPage';
 import {
-  QuotationsPage,
-  InvoicesPage,
   AccountsPage,
   NotificationsPage,
   SettingsPage,

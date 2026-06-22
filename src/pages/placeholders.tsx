@@ -1,33 +1,5 @@
-import {
-  FileText,
-  ReceiptText,
-  Wallet,
-  Bell,
-  Settings,
-} from 'lucide-react';
+import { Wallet, Bell, Settings } from 'lucide-react';
 import { ComingSoon } from '../components/shared/ComingSoon';
-
-export function QuotationsPage() {
-  return (
-    <ComingSoon
-      title="Quotations"
-      description="Create, send, and convert quotations to invoices."
-      icon={FileText}
-      phase="Phase 5"
-    />
-  );
-}
-
-export function InvoicesPage() {
-  return (
-    <ComingSoon
-      title="Invoices"
-      description="VAT-aware invoicing with branded PDF generation."
-      icon={ReceiptText}
-      phase="Phase 5"
-    />
-  );
-}
 
 export function AccountsPage() {
   return (
