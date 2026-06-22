@@ -1,13 +1,7 @@
-import {
-  Document,
-  Page,
-  Text,
-  View,
-  StyleSheet,
-  pdf,
-} from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import { formatCurrency, formatDate } from '../../lib/utils';
 import { COUNTRY_LABEL } from '../../lib/constants';
+import { getSettings } from '../../lib/settings';
 import type {
   CountryCode,
   CurrencyCode,
@@ -93,6 +87,8 @@ const s = StyleSheet.create({
 });
 
 export function DocumentPDF({ doc }: { doc: PdfDoc }) {
+  const bank = getSettings().bank[doc.country];
+  const hasBank = bank && (bank.bankName || bank.iban || bank.accountNumber);
   return (
     <Document>
       <Page size="A4" style={s.page}>
@@ -166,6 +162,13 @@ export function DocumentPDF({ doc }: { doc: PdfDoc }) {
         </View>
 
         <View style={s.footer}>
+          {hasBank ? (
+            <Text>
+              Bank: {bank.bankName} · {bank.accountName}
+              {bank.accountNumber ? ` · A/C ${bank.accountNumber}` : ''}
+              {bank.iban ? ` · IBAN ${bank.iban}` : ''}
+            </Text>
+          ) : null}
           {doc.terms ? <Text>Terms: {doc.terms}</Text> : null}
           {doc.notes ? <Text>Notes: {doc.notes}</Text> : null}
           <Text style={{ marginTop: 12 }}>
@@ -178,12 +181,3 @@ export function DocumentPDF({ doc }: { doc: PdfDoc }) {
   );
 }
 
-export async function downloadDocumentPdf(doc: PdfDoc): Promise<void> {
-  const blob = await pdf(<DocumentPDF doc={doc} />).toBlob();
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${doc.number}.pdf`;
-  a.click();
-  URL.revokeObjectURL(url);
-}

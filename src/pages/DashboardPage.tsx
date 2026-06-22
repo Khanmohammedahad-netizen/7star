@@ -9,6 +9,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { getVisaStatuses } from '../lib/api/employees';
 import { useAuth } from '../contexts/AuthContext';
 import { Card } from '../components/ui/Card';
 import { PageHeader } from '../components/ui/PageHeader';
@@ -54,13 +55,16 @@ export default function DashboardPage() {
   const { profile } = useAuth();
   const [stats, setStats] = useState<Stats | null>(null);
   const [upcoming, setUpcoming] = useState<UpcomingEvent[]>([]);
+  const [visaAlerts, setVisaAlerts] = useState<
+    { id: string; full_name: string; days_until_expiry: number; visa_status_bucket: string }[]
+  >([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
     (async () => {
       const today = new Date().toISOString().slice(0, 10);
-      const [events, invoices, clients, upcomingRes] = await Promise.all([
+      const [events, invoices, clients, upcomingRes, visas] = await Promise.all([
         safeCount('events'),
         safeCount('invoices'),
         safeCount('clients'),
@@ -70,6 +74,7 @@ export default function DashboardPage() {
           .gte('event_date', today)
           .order('event_date', { ascending: true })
           .limit(6),
+        getVisaStatuses().catch(() => []),
       ]);
 
       if (!active) return;
@@ -81,6 +86,13 @@ export default function DashboardPage() {
         clients,
       });
       setUpcoming(upcomingRows);
+      setVisaAlerts(
+        visas
+          .filter((v) =>
+            ['expired', 'critical', 'warning'].includes(v.visa_status_bucket)
+          )
+          .slice(0, 6)
+      );
       setLoading(false);
     })();
     return () => {
@@ -205,10 +217,37 @@ export default function DashboardPage() {
                   Visa alerts
                 </h3>
               </div>
-              <p className="px-6 py-12 text-center text-sm text-muted-foreground">
-                Visa expiry monitoring activates with the Employees module
-                (Phase 3).
-              </p>
+              {visaAlerts.length === 0 ? (
+                <p className="px-6 py-12 text-center text-sm text-muted-foreground">
+                  No visas expiring soon.
+                </p>
+              ) : (
+                <ul className="divide-y divide-border">
+                  {visaAlerts.map((v) => (
+                    <li
+                      key={v.id}
+                      className="flex items-center justify-between px-6 py-3"
+                    >
+                      <Link
+                        to={`/employees/${v.id}`}
+                        className="truncate text-sm font-medium text-foreground hover:text-primary"
+                      >
+                        {v.full_name}
+                      </Link>
+                      <Badge
+                        variant={
+                          v.visa_status_bucket === 'warning' ? 'warning' : 'error'
+                        }
+                        size="sm"
+                      >
+                        {v.days_until_expiry < 0
+                          ? 'Expired'
+                          : `${v.days_until_expiry}d`}
+                      </Badge>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </Card>
           </div>
         </div>

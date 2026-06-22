@@ -8,7 +8,7 @@ import { Spinner } from '../components/ui/Spinner';
 import { EmptyState } from '../components/ui/EmptyState';
 import { CountryFlag } from '../components/shared/CountryFlag';
 import { DocumentForm } from '../components/finance/DocumentForm';
-import { downloadDocumentPdf } from '../components/finance/DocumentPDF';
+import { downloadDocumentPdf } from '../lib/pdf';
 import {
   getQuotations,
   deleteQuotation,
