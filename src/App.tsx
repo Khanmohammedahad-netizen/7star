@@ -14,7 +14,10 @@ import MaterialsPage from './pages/MaterialsPage';
 import QuotationsPage from './pages/QuotationsPage';
 import InvoicesPage from './pages/InvoicesPage';
 import NotificationsPage from './pages/NotificationsPage';
-import { AccountsPage, SettingsPage } from './pages/placeholders';
+import AccountsPage from './pages/admin/AccountsPage';
+import AccountDetailPage from './pages/admin/AccountDetailPage';
+import { PinGate } from './components/admin/PinGate';
+import { SettingsPage } from './pages/placeholders';
 
 const DIRECTORY_ROLES = [
   'super_admin',
@@ -92,10 +95,13 @@ export default function App() {
           path="/admin/accounts"
           element={
             <ProtectedRoute roles={['super_admin']}>
-              <AccountsPage />
+              <PinGate />
             </ProtectedRoute>
           }
-        />
+        >
+          <Route index element={<AccountsPage />} />
+          <Route path=":id" element={<AccountDetailPage />} />
+        </Route>
         <Route path="/admin/notifications" element={<NotificationsPage />} />
         <Route
           path="/users"
