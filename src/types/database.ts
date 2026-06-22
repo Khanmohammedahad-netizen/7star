@@ -1,4 +1,5 @@
-export type UserRole = 'admin' | 'senior_manager' | 'manager';
+import type { UserRole } from './roles';
+export type { UserRole };
 export type Region = 'uae' | 'saudi';
 export type EventStatus = 'planned' | 'in_progress' | 'completed' | 'cancelled';
 export type PaymentType = 'received' | 'pending';

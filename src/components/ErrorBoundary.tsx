@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Component, type ErrorInfo, type ReactNode } from 'react';
 
 interface Props {
   children: ReactNode;
@@ -26,20 +26,20 @@ export class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100">
-          <div className="bg-white p-8 rounded-xl shadow-lg max-w-md">
-            <h1 className="text-xl font-semibold text-red-600 mb-4">
+        <div className="min-h-dvh flex items-center justify-center bg-background p-4">
+          <div className="bg-surface border border-border p-8 rounded-2xl shadow-card max-w-md">
+            <h1 className="text-xl font-semibold text-destructive mb-4">
               Something went wrong
             </h1>
-            <p className="text-gray-600 mb-4">
+            <p className="text-muted-foreground mb-4">
               {this.state.error?.message || 'An unexpected error occurred'}
             </p>
             <button
               onClick={() => {
                 this.setState({ hasError: false, error: null });
-                window.location.href = '/dashboard';
+                window.location.href = '/';
               }}
-              className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+              className="w-full bg-primary text-primary-foreground py-2 rounded-lg hover:opacity-90 cursor-pointer"
             >
               Go to Dashboard
             </button>
