@@ -10,6 +10,8 @@ import {
   Package,
   ReceiptText,
   ExternalLink,
+  Plus,
+  X,
 } from 'lucide-react';
 import { Drawer } from '../ui/Drawer';
 import { Badge } from '../ui/Badge';
@@ -19,7 +21,12 @@ import { Avatar } from '../ui/Avatar';
 import { CallWhatsappButtons } from '../shared/CallWhatsappButtons';
 import { getProject, deleteProject } from '../../lib/api/projects';
 import { getAssignments } from '../../lib/api/employees';
-import { getProjectMaterials } from '../../lib/api/materials';
+import {
+  getProjectMaterials,
+  getCatalog,
+  addProjectMaterial,
+  removeProjectMaterial,
+} from '../../lib/api/materials';
 import { getInvoicesByProject } from '../../lib/api/invoices';
 import { PROJECT_STATUS } from '../../lib/status';
 import { COUNTRY_FLAG, CURRENCY_BY_COUNTRY } from '../../lib/constants';
@@ -30,6 +37,7 @@ import type {
   Event,
   ProjectAssignment,
   ProjectMaterial,
+  MaterialCatalogItem,
   Invoice,
 } from '../../types/database';
 import { toast } from 'sonner';
@@ -56,24 +64,63 @@ export function ProjectDrawer({
   const [project, setProject] = useState<Event | null>(null);
   const [team, setTeam] = useState<ProjectAssignment[]>([]);
   const [materials, setMaterials] = useState<ProjectMaterial[]>([]);
+  const [catalog, setCatalog] = useState<MaterialCatalogItem[]>([]);
+  const [matId, setMatId] = useState('');
+  const [matQty, setMatQty] = useState('1');
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const reloadMaterials = async () => {
+    if (!projectId) return;
+    setMaterials(await getProjectMaterials(projectId).catch(() => []));
+  };
+
+  const handleAddMaterial = async () => {
+    if (!projectId || !matId) return;
+    const item = catalog.find((c) => c.id === matId);
+    if (!item) return;
+    try {
+      await addProjectMaterial({
+        project_id: projectId,
+        material_id: matId,
+        quantity: Number(matQty) || 1,
+        unit_cost_snapshot: item.unit_cost,
+      });
+      setMatId('');
+      setMatQty('1');
+      await reloadMaterials();
+      toast.success('Material added');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to add');
+    }
+  };
+
+  const handleRemoveMaterial = async (id: string) => {
+    try {
+      await removeProjectMaterial(id);
+      await reloadMaterials();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to remove');
+    }
+  };
 
   useEffect(() => {
     if (!open || !projectId) return;
     setLoading(true);
     setTab('overview');
     (async () => {
-      const [p, t, m, inv] = await Promise.all([
+      const [p, t, m, inv, cat] = await Promise.all([
         getProject(projectId),
         getAssignments(projectId).catch(() => []),
         getProjectMaterials(projectId).catch(() => []),
         getInvoicesByProject(projectId).catch(() => []),
+        getCatalog().catch(() => []),
       ]);
       setProject(p);
       setTeam(t);
       setMaterials(m);
       setInvoices(inv);
+      setCatalog(cat);
       setLoading(false);
     })();
   }, [open, projectId]);
@@ -263,7 +310,7 @@ export function ProjectDrawer({
             {tab === 'materials' && (
               <div>
                 {materials.length === 0 ? (
-                  <p className="py-8 text-center text-sm text-muted-foreground">
+                  <p className="py-6 text-center text-sm text-muted-foreground">
                     No materials allocated.
                   </p>
                 ) : (
@@ -274,11 +321,12 @@ export function ProjectDrawer({
                           <th className="pb-2 font-medium">Material</th>
                           <th className="pb-2 text-right font-medium">Qty</th>
                           <th className="pb-2 text-right font-medium">Total</th>
+                          <th className="pb-2" />
                         </tr>
                       </thead>
                       <tbody>
                         {materials.map((m) => (
-                          <tr key={m.id} className="border-b border-border">
+                          <tr key={m.id} className="group border-b border-border">
                             <td className="py-2 text-foreground">
                               {m.material?.name ?? '—'}
                             </td>
@@ -290,6 +338,15 @@ export function ProjectDrawer({
                                 m.quantity * m.unit_cost_snapshot,
                                 currency
                               )}
+                            </td>
+                            <td className="py-2 pl-2 text-right">
+                              <button
+                                onClick={() => handleRemoveMaterial(m.id)}
+                                aria-label="Remove material"
+                                className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100 cursor-pointer"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
                             </td>
                           </tr>
                         ))}
@@ -303,6 +360,37 @@ export function ProjectDrawer({
                     </div>
                   </>
                 )}
+
+                {/* Add material */}
+                <div className="mt-5 flex items-end gap-2 border-t border-border pt-4">
+                  <div className="flex-1">
+                    <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                      Add material
+                    </label>
+                    <select
+                      value={matId}
+                      onChange={(e) => setMatId(e.target.value)}
+                      className="h-9 w-full rounded-lg border border-input bg-surface px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <option value="">Select…</option>
+                      {catalog.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name} ({formatCurrency(c.unit_cost, currency)}/{c.unit})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <input
+                    type="number"
+                    min="1"
+                    value={matQty}
+                    onChange={(e) => setMatQty(e.target.value)}
+                    className="h-9 w-16 rounded-lg border border-input bg-surface px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                  <Button size="sm" onClick={handleAddMaterial} disabled={!matId}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             )}
 

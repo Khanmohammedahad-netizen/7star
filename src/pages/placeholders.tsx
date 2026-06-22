@@ -1,5 +1,4 @@
 import {
-  Package,
   FileText,
   ReceiptText,
   Wallet,
@@ -7,17 +6,6 @@ import {
   Settings,
 } from 'lucide-react';
 import { ComingSoon } from '../components/shared/ComingSoon';
-
-export function MaterialsPage() {
-  return (
-    <ComingSoon
-      title="Materials"
-      description="Materials catalogue and per-project allocation."
-      icon={Package}
-      phase="Phase 4"
-    />
-  );
-}
 
 export function QuotationsPage() {
   return (

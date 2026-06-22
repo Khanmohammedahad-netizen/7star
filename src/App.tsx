@@ -10,8 +10,8 @@ import ClientDetailPage from './pages/ClientDetailPage';
 import EmployeesPage from './pages/EmployeesPage';
 import EmployeeDetailPage from './pages/EmployeeDetailPage';
 import UsersPage from './pages/UsersPage';
+import MaterialsPage from './pages/MaterialsPage';
 import {
-  MaterialsPage,
   QuotationsPage,
   InvoicesPage,
   AccountsPage,
