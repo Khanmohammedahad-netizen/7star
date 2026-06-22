@@ -1,5 +1,4 @@
 import {
-  FolderKanban,
   Users2,
   Contact,
   Package,
@@ -11,17 +10,6 @@ import {
   Settings,
 } from 'lucide-react';
 import { ComingSoon } from '../components/shared/ComingSoon';
-
-export function ProjectsPage() {
-  return (
-    <ComingSoon
-      title="Projects"
-      description="All events and projects across UAE & Saudi operations."
-      icon={FolderKanban}
-      phase="Phase 2"
-    />
-  );
-}
 
 export function ClientsPage() {
   return (

@@ -6,6 +6,7 @@ import './index.css';
 import { ThemeProvider } from './lib/theme';
 import { AuthProvider } from './contexts/AuthContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { AppToaster } from './components/shared/AppToaster';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -14,6 +15,7 @@ createRoot(document.getElementById('root')!).render(
         <BrowserRouter>
           <AuthProvider>
             <App />
+            <AppToaster />
           </AuthProvider>
         </BrowserRouter>
       </ThemeProvider>

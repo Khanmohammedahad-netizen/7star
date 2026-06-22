@@ -110,6 +110,12 @@ CREATE INDEX IF NOT EXISTS idx_employees_visa_expiry
 -- ---------------------------------------------------------------------------
 -- Extend events to act as the "project" entity
 -- ---------------------------------------------------------------------------
+-- Widen the status palette to match the calendar (draft/confirmed added)
+ALTER TABLE events DROP CONSTRAINT IF EXISTS events_status_check;
+ALTER TABLE events
+  ADD CONSTRAINT events_status_check
+  CHECK (status IN ('draft','planned','confirmed','in_progress','completed','cancelled'));
+
 ALTER TABLE events ADD COLUMN IF NOT EXISTS client_id uuid REFERENCES clients(id);
 ALTER TABLE events ADD COLUMN IF NOT EXISTS representative_id uuid REFERENCES client_representatives(id);
 ALTER TABLE events ADD COLUMN IF NOT EXISTS country country_code;

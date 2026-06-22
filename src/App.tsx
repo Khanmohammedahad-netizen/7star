@@ -3,8 +3,9 @@ import MainLayout from './components/MainLayout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import LoginPage from './pages/auth/LoginPage';
 import DashboardPage from './pages/DashboardPage';
+import CalendarPage from './pages/CalendarPage';
+import ProjectsPage from './pages/ProjectsPage';
 import {
-  ProjectsPage,
   ClientsPage,
   ClientDetailPage,
   EmployeesPage,
@@ -38,6 +39,7 @@ export default function App() {
         }
       >
         <Route path="/" element={<DashboardPage />} />
+        <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/projects" element={<ProjectsPage />} />
         <Route path="/materials" element={<MaterialsPage />} />
 

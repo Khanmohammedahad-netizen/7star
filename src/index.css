@@ -98,6 +98,70 @@
   }
 }
 
+/* FullCalendar theming — bind to our semantic tokens (light + dark) */
+.fc-theme {
+  --fc-border-color: rgb(var(--border));
+  --fc-page-bg-color: transparent;
+  --fc-neutral-bg-color: rgb(var(--surface-2));
+  --fc-today-bg-color: rgb(var(--primary) / 0.08);
+  --fc-list-event-hover-bg-color: rgb(var(--surface-2));
+}
+.fc-theme .fc {
+  font-family: inherit;
+}
+.fc-theme .fc .fc-toolbar-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: rgb(var(--foreground));
+}
+.fc-theme .fc .fc-col-header-cell-cushion,
+.fc-theme .fc .fc-daygrid-day-number,
+.fc-theme .fc .fc-list-day-text,
+.fc-theme .fc .fc-list-day-side-text {
+  color: rgb(var(--muted-foreground));
+  text-decoration: none;
+}
+.fc-theme .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+  color: rgb(var(--primary));
+  font-weight: 600;
+}
+.fc-theme .fc .fc-button {
+  background: rgb(var(--surface-2));
+  border: 1px solid rgb(var(--border));
+  color: rgb(var(--foreground));
+  font-weight: 500;
+  text-transform: capitalize;
+  box-shadow: none;
+  border-radius: 0.5rem;
+  padding: 0.35rem 0.75rem;
+}
+.fc-theme .fc .fc-button:hover {
+  background: rgb(var(--muted));
+}
+.fc-theme .fc .fc-button-primary:not(:disabled).fc-button-active,
+.fc-theme .fc .fc-button-primary:not(:disabled):active {
+  background: rgb(var(--primary));
+  border-color: rgb(var(--primary));
+  color: rgb(var(--primary-foreground));
+}
+.fc-theme .fc .fc-button:focus-visible {
+  outline: 2px solid rgb(var(--ring));
+  outline-offset: 2px;
+}
+.fc-theme .fc .fc-event {
+  border-radius: 6px;
+  padding: 1px 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.fc-theme .fc-event.line-through .fc-event-title {
+  text-decoration: line-through;
+}
+.fc-theme .fc a {
+  color: inherit;
+}
+
 @layer utilities {
   .glass {
     background-color: rgb(var(--surface) / 0.72);

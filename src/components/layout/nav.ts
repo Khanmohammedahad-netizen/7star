@@ -1,4 +1,5 @@
 import {
+  LayoutDashboard,
   Calendar,
   FolderKanban,
   Users2,
@@ -30,7 +31,8 @@ export interface NavSection {
 export const NAV_SECTIONS: NavSection[] = [
   {
     items: [
-      { label: 'Calendar', to: '/', icon: Calendar },
+      { label: 'Dashboard', to: '/', icon: LayoutDashboard },
+      { label: 'Calendar', to: '/calendar', icon: Calendar },
       { label: 'Projects', to: '/projects', icon: FolderKanban },
     ],
   },
