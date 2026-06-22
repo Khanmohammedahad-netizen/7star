@@ -70,6 +70,16 @@ CREATE TABLE IF NOT EXISTS clients (
   updated_at timestamptz DEFAULT now()
 );
 
+-- Reconcile clients if an older version of the table already exists
+-- (CREATE TABLE IF NOT EXISTS above is a no-op when the table pre-dates this).
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS country country_code NOT NULL DEFAULT 'UAE';
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS email text;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS phone text;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS address text;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS notes text;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS created_at timestamptz DEFAULT now();
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now();
+
 CREATE TABLE IF NOT EXISTS client_representatives (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   client_id uuid REFERENCES clients(id) ON DELETE CASCADE,
@@ -104,6 +114,23 @@ CREATE TABLE IF NOT EXISTS employees (
   status employee_status DEFAULT 'active',
   created_at timestamptz DEFAULT now()
 );
+-- Reconcile employees if an older version of the table already exists
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS user_id uuid REFERENCES auth.users(id);
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS phone text;
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS email text;
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS role text NOT NULL DEFAULT 'technician';
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS nationality text;
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS country_of_work country_code NOT NULL DEFAULT 'UAE';
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS visa_number text;
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS visa_issued_date date;
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS visa_expiry_date date;
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS passport_number text;
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS passport_expiry date;
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS emergency_contact text;
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS photo_url text;
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS status employee_status DEFAULT 'active';
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS created_at timestamptz DEFAULT now();
+
 CREATE INDEX IF NOT EXISTS idx_employees_visa_expiry
   ON employees(visa_expiry_date) WHERE status = 'active';
 
@@ -185,6 +212,28 @@ CREATE TABLE IF NOT EXISTS quotations (
   created_by uuid REFERENCES auth.users(id),
   created_at timestamptz DEFAULT now()
 );
+
+-- Reconcile quotations if an older version of the table already exists
+ALTER TABLE quotations ADD COLUMN IF NOT EXISTS quote_number text;
+ALTER TABLE quotations ADD COLUMN IF NOT EXISTS project_id uuid REFERENCES events(id);
+ALTER TABLE quotations ADD COLUMN IF NOT EXISTS client_id uuid REFERENCES clients(id);
+ALTER TABLE quotations ADD COLUMN IF NOT EXISTS representative_id uuid REFERENCES client_representatives(id);
+ALTER TABLE quotations ADD COLUMN IF NOT EXISTS country country_code NOT NULL DEFAULT 'UAE';
+ALTER TABLE quotations ADD COLUMN IF NOT EXISTS currency currency_code NOT NULL DEFAULT 'AED';
+ALTER TABLE quotations ADD COLUMN IF NOT EXISTS issue_date date NOT NULL DEFAULT CURRENT_DATE;
+ALTER TABLE quotations ADD COLUMN IF NOT EXISTS valid_until date NOT NULL DEFAULT (CURRENT_DATE + 30);
+ALTER TABLE quotations ADD COLUMN IF NOT EXISTS status doc_status DEFAULT 'draft';
+ALTER TABLE quotations ADD COLUMN IF NOT EXISTS subtotal numeric DEFAULT 0;
+ALTER TABLE quotations ADD COLUMN IF NOT EXISTS vat_rate numeric NOT NULL DEFAULT 0.05;
+ALTER TABLE quotations ADD COLUMN IF NOT EXISTS vat_amount numeric DEFAULT 0;
+ALTER TABLE quotations ADD COLUMN IF NOT EXISTS total numeric DEFAULT 0;
+ALTER TABLE quotations ADD COLUMN IF NOT EXISTS terms text;
+ALTER TABLE quotations ADD COLUMN IF NOT EXISTS notes text;
+ALTER TABLE quotations ADD COLUMN IF NOT EXISTS created_by uuid REFERENCES auth.users(id);
+ALTER TABLE quotations ADD COLUMN IF NOT EXISTS created_at timestamptz DEFAULT now();
+DO $$ BEGIN
+  ALTER TABLE quotations ADD CONSTRAINT quotations_quote_number_key UNIQUE (quote_number);
+EXCEPTION WHEN duplicate_table OR duplicate_object THEN NULL; END $$;
 
 CREATE TABLE IF NOT EXISTS quotation_line_items (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
