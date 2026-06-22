@@ -1,4 +1,4 @@
-import { Wallet, Bell, Settings } from 'lucide-react';
+import { Wallet, Settings } from 'lucide-react';
 import { ComingSoon } from '../components/shared/ComingSoon';
 
 export function AccountsPage() {
@@ -8,17 +8,6 @@ export function AccountsPage() {
       description="PIN-protected personal finance ledger (super admin)."
       icon={Wallet}
       phase="Phase 7"
-    />
-  );
-}
-
-export function NotificationsPage() {
-  return (
-    <ComingSoon
-      title="Notifications"
-      description="Visa expiry, invoice due, and project alerts."
-      icon={Bell}
-      phase="Phase 6"
     />
   );
 }

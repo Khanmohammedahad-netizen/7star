@@ -13,11 +13,8 @@ import UsersPage from './pages/UsersPage';
 import MaterialsPage from './pages/MaterialsPage';
 import QuotationsPage from './pages/QuotationsPage';
 import InvoicesPage from './pages/InvoicesPage';
-import {
-  AccountsPage,
-  NotificationsPage,
-  SettingsPage,
-} from './pages/placeholders';
+import NotificationsPage from './pages/NotificationsPage';
+import { AccountsPage, SettingsPage } from './pages/placeholders';
 
 const DIRECTORY_ROLES = [
   'super_admin',
