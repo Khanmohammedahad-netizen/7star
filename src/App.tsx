@@ -5,17 +5,17 @@ import LoginPage from './pages/auth/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import CalendarPage from './pages/CalendarPage';
 import ProjectsPage from './pages/ProjectsPage';
+import ClientsPage from './pages/ClientsPage';
+import ClientDetailPage from './pages/ClientDetailPage';
+import EmployeesPage from './pages/EmployeesPage';
+import EmployeeDetailPage from './pages/EmployeeDetailPage';
+import UsersPage from './pages/UsersPage';
 import {
-  ClientsPage,
-  ClientDetailPage,
-  EmployeesPage,
-  EmployeeDetailPage,
   MaterialsPage,
   QuotationsPage,
   InvoicesPage,
   AccountsPage,
   NotificationsPage,
-  UsersPage,
   SettingsPage,
 } from './pages/placeholders';
 

@@ -1,59 +1,12 @@
 import {
-  Users2,
-  Contact,
   Package,
   FileText,
   ReceiptText,
   Wallet,
   Bell,
-  ShieldCheck,
   Settings,
 } from 'lucide-react';
 import { ComingSoon } from '../components/shared/ComingSoon';
-
-export function ClientsPage() {
-  return (
-    <ComingSoon
-      title="Clients"
-      description="Client directory with representatives and contact actions."
-      icon={Users2}
-      phase="Phase 3"
-    />
-  );
-}
-
-export function ClientDetailPage() {
-  return (
-    <ComingSoon
-      title="Client"
-      description="Client profile, projects, and finance history."
-      icon={Users2}
-      phase="Phase 3"
-    />
-  );
-}
-
-export function EmployeesPage() {
-  return (
-    <ComingSoon
-      title="Employees"
-      description="Workforce directory with visa and passport tracking."
-      icon={Contact}
-      phase="Phase 3"
-    />
-  );
-}
-
-export function EmployeeDetailPage() {
-  return (
-    <ComingSoon
-      title="Employee"
-      description="Employee profile, documents, and visa status."
-      icon={Contact}
-      phase="Phase 3"
-    />
-  );
-}
 
 export function MaterialsPage() {
   return (
@@ -106,17 +59,6 @@ export function NotificationsPage() {
       description="Visa expiry, invoice due, and project alerts."
       icon={Bell}
       phase="Phase 6"
-    />
-  );
-}
-
-export function UsersPage() {
-  return (
-    <ComingSoon
-      title="Users"
-      description="Manage team members, roles, and access."
-      icon={ShieldCheck}
-      phase="Phase 3"
     />
   );
 }
