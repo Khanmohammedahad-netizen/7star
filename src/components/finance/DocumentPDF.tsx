@@ -78,7 +78,7 @@ const s = StyleSheet.create({
 
   table: { borderWidth: 0.7, borderColor: LINE },
   th: { flexDirection: 'row', borderBottomWidth: 0.7, borderColor: LINE },
-  tr: { flexDirection: 'row', borderBottomWidth: 0.5, borderColor: LINE, minHeight: 18 },
+  tr: { flexDirection: 'row', borderBottomWidth: 0.5, borderColor: LINE, minHeight: 24 },
   cell: { paddingVertical: 3, paddingHorizontal: 4, borderRightWidth: 0.5, borderColor: LINE },
   cellLast: { paddingVertical: 3, paddingHorizontal: 4, backgroundColor: GREEN_AMT, justifyContent: 'center' },
   thText: { fontFamily: 'Helvetica-Bold', fontSize: 8.5 },
@@ -159,6 +159,8 @@ function Footer({ email }: { email: string }) {
 function ItemsTable({ doc }: { doc: PdfDoc }) {
   const vatPct = `${(doc.vatRate * 100).toFixed(0)}% Vat`;
   const cur = doc.currency;
+  const MIN_ROWS = 15;
+  const emptyRows = Math.max(0, MIN_ROWS - doc.items.length);
   return (
     <>
       <View style={s.table}>
@@ -182,6 +184,16 @@ function ItemsTable({ doc }: { doc: PdfDoc }) {
             <Text style={[s.cAmt, s.cellLast, { textAlign: 'right' }]}>
               {(it.amount || 0).toLocaleString('en-AE', { minimumFractionDigits: 2 })}
             </Text>
+          </View>
+        ))}
+        {Array.from({ length: emptyRows }).map((_, i) => (
+          <View style={s.tr} key={`empty-${i}`} wrap={false}>
+            <Text style={[s.cell, s.cNo]} />
+            <Text style={[s.cell, s.cDesc]} />
+            <Text style={[s.cell, s.cSize]} />
+            <Text style={[s.cell, s.cQty]} />
+            <Text style={[s.cell, s.cRate]} />
+            <Text style={[s.cAmt, s.cellLast]} />
           </View>
         ))}
       </View>
