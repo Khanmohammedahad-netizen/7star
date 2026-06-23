@@ -14,35 +14,29 @@ import {
 } from '../../lib/api/projects';
 import { getClients } from '../../lib/api/clients';
 import { getManagers } from '../../lib/api/lookups';
-import { PROJECT_STATUSES } from '../../lib/status';
-import { PROJECT_STATUS } from '../../lib/status';
-import { regionToCountry } from '../../lib/constants';
+import { PROJECT_STATUSES, projectStatus } from '../../lib/status';
 import type { Client, Event } from '../../types/database';
 
 const schema = z
   .object({
     title: z.string().min(2, 'Name is required'),
-    region: z.enum(['uae', 'saudi']),
-    status: z.enum([
-      'draft',
-      'planned',
-      'confirmed',
-      'in_progress',
-      'completed',
-      'cancelled',
-    ]),
+    region: z.enum(['UAE', 'SAUDI']),
+    status: z.string().min(1),
     event_date: z.string().min(1, 'Start date is required'),
     end_date: z.string().optional(),
     client_id: z.string().optional(),
     manager_id: z.string().optional(),
-    budget: z.string().optional(),
+    type: z.string().optional(),
+    venue_name: z.string().optional(),
+    budget_total: z.string().optional(),
+    expected_guests: z.string().optional(),
     location: z.string().optional(),
     description: z.string().optional(),
   })
-  .refine(
-    (d) => !d.end_date || d.end_date >= d.event_date,
-    { message: 'End date must be after start date', path: ['end_date'] }
-  );
+  .refine((d) => !d.end_date || d.end_date >= d.event_date, {
+    message: 'End date must be after start date',
+    path: ['end_date'],
+  });
 
 type FormValues = z.infer<typeof schema>;
 
@@ -56,9 +50,7 @@ interface Props {
 export function ProjectForm({ open, onClose, onSaved, project }: Props) {
   const editing = !!project;
   const [clients, setClients] = useState<Client[]>([]);
-  const [managers, setManagers] = useState<
-    { id: string; full_name: string }[]
-  >([]);
+  const [managers, setManagers] = useState<{ id: string; full_name: string }[]>([]);
 
   const {
     register,
@@ -69,13 +61,16 @@ export function ProjectForm({ open, onClose, onSaved, project }: Props) {
     resolver: zodResolver(schema),
     defaultValues: {
       title: '',
-      region: 'uae',
-      status: 'draft',
+      region: 'UAE',
+      status: 'planning',
       event_date: '',
       end_date: '',
       client_id: '',
       manager_id: '',
-      budget: '',
+      type: '',
+      venue_name: '',
+      budget_total: '',
+      expected_guests: '',
       location: '',
       description: '',
     },
@@ -89,13 +84,17 @@ export function ProjectForm({ open, onClose, onSaved, project }: Props) {
       .catch(() => setManagers([]));
     reset({
       title: project?.title ?? '',
-      region: project?.region ?? 'uae',
-      status: project?.status ?? 'draft',
+      region: project?.region ?? 'UAE',
+      status: project?.status ?? 'planning',
       event_date: project?.event_date?.slice(0, 10) ?? '',
       end_date: project?.end_date?.slice(0, 10) ?? '',
       client_id: project?.client_id ?? '',
       manager_id: project?.manager_id ?? '',
-      budget: project?.budget != null ? String(project.budget) : '',
+      type: project?.type ?? '',
+      venue_name: project?.venue_name ?? '',
+      budget_total: project?.budget_total != null ? String(project.budget_total) : '',
+      expected_guests:
+        project?.expected_guests != null ? String(project.expected_guests) : '',
       location: project?.location ?? '',
       description: project?.description ?? '',
     });
@@ -105,13 +104,15 @@ export function ProjectForm({ open, onClose, onSaved, project }: Props) {
     const payload: ProjectInput = {
       title: values.title,
       region: values.region,
-      country: regionToCountry(values.region),
       status: values.status,
       event_date: values.event_date,
       end_date: values.end_date || null,
       client_id: values.client_id || null,
       manager_id: values.manager_id || null,
-      budget: values.budget ? Number(values.budget) : null,
+      type: values.type || null,
+      venue_name: values.venue_name || null,
+      budget_total: values.budget_total ? Number(values.budget_total) : null,
+      expected_guests: values.expected_guests ? Number(values.expected_guests) : null,
       location: values.location || null,
       description: values.description || null,
     };
@@ -141,21 +142,13 @@ export function ProjectForm({ open, onClose, onSaved, project }: Props) {
           <Button variant="ghost" onClick={onClose} type="button">
             Cancel
           </Button>
-          <Button
-            type="submit"
-            form="project-form"
-            loading={isSubmitting}
-          >
+          <Button type="submit" form="project-form" loading={isSubmitting}>
             {editing ? 'Save changes' : 'Create project'}
           </Button>
         </>
       }
     >
-      <form
-        id="project-form"
-        onSubmit={handleSubmit(onSubmit)}
-        className="space-y-4"
-      >
+      <form id="project-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <Input
           label="Project name"
           required
@@ -168,8 +161,8 @@ export function ProjectForm({ open, onClose, onSaved, project }: Props) {
             label="Region"
             required
             options={[
-              { value: 'uae', label: 'UAE' },
-              { value: 'saudi', label: 'Saudi Arabia' },
+              { value: 'UAE', label: 'UAE' },
+              { value: 'SAUDI', label: 'Saudi Arabia' },
             ]}
             {...register('region')}
           />
@@ -178,7 +171,7 @@ export function ProjectForm({ open, onClose, onSaved, project }: Props) {
             required
             options={PROJECT_STATUSES.map((s) => ({
               value: s,
-              label: PROJECT_STATUS[s].label,
+              label: projectStatus(s).label,
             }))}
             {...register('status')}
           />
@@ -210,12 +203,14 @@ export function ProjectForm({ open, onClose, onSaved, project }: Props) {
           <Select
             label="Manager"
             placeholder="— Unassigned —"
-            options={managers.map((m) => ({
-              value: m.id,
-              label: m.full_name,
-            }))}
+            options={managers.map((m) => ({ value: m.id, label: m.full_name }))}
             {...register('manager_id')}
           />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Input label="Event type" placeholder="Wedding, corporate…" {...register('type')} />
+          <Input label="Venue" {...register('venue_name')} />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -224,16 +219,17 @@ export function ProjectForm({ open, onClose, onSaved, project }: Props) {
             type="number"
             step="0.01"
             inputMode="decimal"
-            {...register('budget')}
+            {...register('budget_total')}
           />
-          <Input label="Location" {...register('location')} />
+          <Input
+            label="Expected guests"
+            type="number"
+            {...register('expected_guests')}
+          />
         </div>
 
-        <Textarea
-          label="Notes"
-          rows={3}
-          {...register('description')}
-        />
+        <Input label="Location" {...register('location')} />
+        <Textarea label="Notes" rows={3} {...register('description')} />
       </form>
     </Modal>
   );

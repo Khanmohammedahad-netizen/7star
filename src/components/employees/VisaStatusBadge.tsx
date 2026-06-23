@@ -1,5 +1,6 @@
 import { Badge } from '../ui/Badge';
-import type { VisaBucket } from '../../types/database';
+
+type VisaBucket = 'expired' | 'critical' | 'warning' | 'caution' | 'ok';
 
 interface Props {
   expiryDate?: string | null;

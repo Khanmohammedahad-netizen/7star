@@ -1,10 +1,15 @@
 import { supabase } from '../supabase';
-import type { Client, ClientRepresentative } from '../../types/database';
+import type { Client } from '../../types/database';
+
+export type ClientInput = Omit<
+  Client,
+  'id' | 'created_at' | 'updated_at' | 'created_by'
+>;
 
 export async function getClients(): Promise<Client[]> {
   const { data, error } = await supabase
     .from('clients')
-    .select('*, representatives:client_representatives(*)')
+    .select('*')
     .order('name', { ascending: true });
   if (error) throw error;
   return (data as Client[]) ?? [];
@@ -13,19 +18,18 @@ export async function getClients(): Promise<Client[]> {
 export async function getClient(id: string): Promise<Client | null> {
   const { data, error } = await supabase
     .from('clients')
-    .select('*, representatives:client_representatives(*)')
+    .select('*')
     .eq('id', id)
     .maybeSingle();
   if (error) throw error;
   return (data as Client) ?? null;
 }
 
-export async function createClient(
-  input: Omit<Client, 'id' | 'created_at' | 'updated_at' | 'representatives'>
-): Promise<Client> {
+export async function createClient(input: Partial<ClientInput>): Promise<Client> {
+  const { data: userRes } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from('clients')
-    .insert(input)
+    .insert({ ...input, created_by: userRes.user?.id ?? null })
     .select()
     .single();
   if (error) throw error;
@@ -34,13 +38,11 @@ export async function createClient(
 
 export async function updateClient(
   id: string,
-  input: Partial<Client>
+  input: Partial<ClientInput>
 ): Promise<Client> {
-  const { representatives: _r, ...rest } = input;
-  void _r;
   const { data, error } = await supabase
     .from('clients')
-    .update(rest)
+    .update(input)
     .eq('id', id)
     .select()
     .single();
@@ -50,25 +52,5 @@ export async function updateClient(
 
 export async function deleteClient(id: string): Promise<void> {
   const { error } = await supabase.from('clients').delete().eq('id', id);
-  if (error) throw error;
-}
-
-export async function addRepresentative(
-  input: Omit<ClientRepresentative, 'id' | 'created_at'>
-): Promise<ClientRepresentative> {
-  const { data, error } = await supabase
-    .from('client_representatives')
-    .insert(input)
-    .select()
-    .single();
-  if (error) throw error;
-  return data as ClientRepresentative;
-}
-
-export async function deleteRepresentative(id: string): Promise<void> {
-  const { error } = await supabase
-    .from('client_representatives')
-    .delete()
-    .eq('id', id);
   if (error) throw error;
 }

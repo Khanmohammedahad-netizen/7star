@@ -1,34 +1,34 @@
-import type { CountryCode } from '../../types/database';
+import type { Region } from '../../types/database';
 import { VAT_RATES } from '../constants';
 
 export interface RawLineItem {
   description: string;
-  qty: number;
-  unit_price: number;
+  quantity: number;
+  rate: number;
 }
 
 export interface ComputedTotals {
-  subtotal: number;
+  net_amount: number;
   vat_rate: number;
   vat_amount: number;
-  total: number;
+  total_amount: number;
 }
 
-export function lineTotal(item: { qty: number; unit_price: number }): number {
-  return round2((item.qty || 0) * (item.unit_price || 0));
+export function lineAmount(item: { quantity: number; rate: number }): number {
+  return round2((item.quantity || 0) * (item.rate || 0));
 }
 
 export function computeTotals(
   items: RawLineItem[],
-  country: CountryCode
+  region: Region
 ): ComputedTotals {
-  const subtotal = round2(
-    items.reduce((s, i) => s + (i.qty || 0) * (i.unit_price || 0), 0)
+  const net_amount = round2(
+    items.reduce((s, i) => s + (i.quantity || 0) * (i.rate || 0), 0)
   );
-  const vat_rate = VAT_RATES[country];
-  const vat_amount = round2(subtotal * vat_rate);
-  const total = round2(subtotal + vat_amount);
-  return { subtotal, vat_rate, vat_amount, total };
+  const vat_rate = VAT_RATES[region];
+  const vat_amount = round2(net_amount * vat_rate);
+  const total_amount = round2(net_amount + vat_amount);
+  return { net_amount, vat_rate, vat_amount, total_amount };
 }
 
 export function round2(n: number): number {

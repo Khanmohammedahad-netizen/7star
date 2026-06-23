@@ -15,15 +15,15 @@ import {
   getInvoice,
   setInvoiceStatus,
   deleteInvoice,
-  type InvoiceWithItems,
 } from '../lib/api/invoices';
+import { regionCurrency, VAT_RATES } from '../lib/constants';
 import { formatCurrency, formatDate } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 import { isAdminRole } from '../types/roles';
 import { toast } from 'sonner';
-import type { Invoice, InvoiceStatus, CurrencyCode } from '../types/database';
+import type { Invoice } from '../types/database';
 
-const statusVariant: Record<InvoiceStatus, 'neutral' | 'info' | 'success' | 'error'> = {
+const statusVariant: Record<string, 'neutral' | 'info' | 'success' | 'error'> = {
   draft: 'neutral',
   sent: 'info',
   paid: 'success',
@@ -36,7 +36,7 @@ export default function InvoicesPage() {
   const [rows, setRows] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
-  const [editing, setEditing] = useState<InvoiceWithItems | null>(null);
+  const [editing, setEditing] = useState<Invoice | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -53,7 +53,6 @@ export default function InvoicesPage() {
     load();
   }, [load]);
 
-  // Open a fresh invoice form when arriving from "Generate Invoice".
   useEffect(() => {
     if (searchParams.get('project')) {
       setEditing(null);
@@ -65,32 +64,30 @@ export default function InvoicesPage() {
   }, []);
 
   const openEdit = async (inv: Invoice) => {
-    const full = await getInvoice(inv.id);
-    setEditing(full);
+    setEditing(await getInvoice(inv.id));
     setFormOpen(true);
   };
 
   const download = async (inv: Invoice) => {
     const full = await getInvoice(inv.id);
     if (!full) return;
-    const currency = (full.currency ?? 'AED') as CurrencyCode;
+    const currency = regionCurrency(full.region);
     await downloadDocumentPdf({
       kind: 'Invoice',
-      number: full.invoice_number,
-      country: full.country ?? 'UAE',
+      number: full.invoice_number ?? full.doc_number ?? 'INVOICE',
+      region: full.region,
       currency,
-      issueDate: full.issue_date,
+      issueDate: full.issue_date ?? full.invoice_date ?? full.created_at,
       secondDateLabel: 'Due date',
-      secondDate: full.due_date,
+      secondDate: full.due_date ?? '',
       status: full.status,
-      clientName: full.client_name,
-      clientContact: full.client_contact,
+      clientName: full.client_name ?? full.client?.name ?? 'Client',
+      clientContact: full.client_contact ?? undefined,
       items: full.line_items ?? [],
-      subtotal: full.subtotal ?? 0,
-      vatRate: full.vat_rate ?? 0,
+      subtotal: full.net_amount ?? full.subtotal ?? 0,
+      vatRate: VAT_RATES[full.region],
       vatAmount: full.vat_amount ?? 0,
-      total: full.total_amount,
-      terms: full.terms,
+      total: full.total_amount ?? full.total ?? 0,
       notes: full.notes,
     });
   };
@@ -171,24 +168,22 @@ export default function InvoicesPage() {
                 {rows.map((inv) => (
                   <tr key={inv.id} className="group border-b border-border last:border-0 hover:bg-surface-2">
                     <td className="px-5 py-3">
-                      {inv.country && (
-                        <span className="mr-2"><CountryFlag country={inv.country} /></span>
-                      )}
+                      <span className="mr-2"><CountryFlag region={inv.region} /></span>
                       <span className="font-medium text-foreground">
-                        {inv.invoice_number}
+                        {inv.invoice_number ?? inv.doc_number}
                       </span>
                     </td>
                     <td className="px-5 py-3 text-muted-foreground">
-                      {inv.client_name}
+                      {inv.client_name ?? inv.client?.name ?? '—'}
                     </td>
                     <td className="px-5 py-3 text-muted-foreground">
-                      {formatDate(inv.due_date)}
+                      {inv.due_date ? formatDate(inv.due_date) : '—'}
                     </td>
                     <td className="px-5 py-3 text-right tnum text-foreground">
-                      {formatCurrency(inv.total_amount, inv.currency ?? 'AED')}
+                      {formatCurrency(inv.total_amount ?? 0, regionCurrency(inv.region))}
                     </td>
                     <td className="px-5 py-3">
-                      <Badge variant={statusVariant[inv.status]}>{inv.status}</Badge>
+                      <Badge variant={statusVariant[inv.status] ?? 'neutral'}>{inv.status}</Badge>
                     </td>
                     <td className="px-5 py-3">
                       <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">

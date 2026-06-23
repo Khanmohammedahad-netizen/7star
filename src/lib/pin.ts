@@ -22,3 +22,14 @@ export function isUnlocked(): boolean {
 export function lock(): void {
   sessionStorage.removeItem(UNLOCK_KEY);
 }
+
+// PIN hash persisted per-browser (profiles has no PIN column in this DB).
+const PIN_KEY = 'personal_pin_hash';
+
+export function getStoredPinHash(): string | null {
+  return localStorage.getItem(PIN_KEY);
+}
+
+export function setStoredPinHash(hash: string): void {
+  localStorage.setItem(PIN_KEY, hash);
+}

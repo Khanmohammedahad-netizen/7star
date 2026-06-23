@@ -13,10 +13,10 @@ import { Spinner } from '../components/ui/Spinner';
 import { ProjectDrawer } from '../components/projects/ProjectDrawer';
 import { ProjectForm } from '../components/projects/ProjectForm';
 import { getProjects } from '../lib/api/projects';
-import { PROJECT_STATUS } from '../lib/status';
-import { COUNTRY_FLAG } from '../lib/constants';
+import { projectStatus } from '../lib/status';
+import { REGION_FLAG } from '../lib/constants';
 import { toast } from 'sonner';
-import type { Event } from '../types/database';
+import type { Event, Region } from '../types/database';
 
 export default function CalendarPage() {
   const [projects, setProjects] = useState<Event[]>([]);
@@ -44,11 +44,11 @@ export default function CalendarPage() {
   const events: EventInput[] = useMemo(
     () =>
       projects.map((p) => {
-        const meta = PROJECT_STATUS[p.status];
-        const country = p.country ?? (p.region === 'saudi' ? 'SA' : 'UAE');
+        const meta = projectStatus(p.status);
+        const region: Region = p.region === 'SAUDI' ? 'SAUDI' : 'UAE';
         return {
           id: p.id,
-          title: `${COUNTRY_FLAG[country]} ${p.title}${
+          title: `${REGION_FLAG[region]} ${p.title}${
             p.client?.name ? ` · ${p.client.name}` : ''
           }`,
           start: p.event_date,
@@ -68,24 +68,18 @@ export default function CalendarPage() {
     setDrawerOpen(true);
   };
 
-  const openCreate = () => {
-    setEditing(null);
-    setFormOpen(true);
-  };
-
-  const openEdit = (project: Event) => {
-    setEditing(project);
-    setDrawerOpen(false);
-    setFormOpen(true);
-  };
-
   return (
     <div>
       <PageHeader
         title="Calendar"
         description="All projects and events across UAE & Saudi operations."
         actions={
-          <Button onClick={openCreate}>
+          <Button
+            onClick={() => {
+              setEditing(null);
+              setFormOpen(true);
+            }}
+          >
             <Plus className="h-4 w-4" /> New project
           </Button>
         }
@@ -98,12 +92,7 @@ export default function CalendarPage() {
           </div>
         ) : (
           <FullCalendar
-            plugins={[
-              dayGridPlugin,
-              timeGridPlugin,
-              listPlugin,
-              interactionPlugin,
-            ]}
+            plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin]}
             initialView="dayGridMonth"
             headerToolbar={{
               left: 'prev,next today',
@@ -124,7 +113,11 @@ export default function CalendarPage() {
         projectId={selectedId}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        onEdit={openEdit}
+        onEdit={(project) => {
+          setEditing(project);
+          setDrawerOpen(false);
+          setFormOpen(true);
+        }}
         onChanged={load}
       />
 

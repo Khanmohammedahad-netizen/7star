@@ -106,9 +106,14 @@ export default function ClientDetailPage() {
         <div className="space-y-6 lg:col-span-1">
           <Card>
             <div className="mb-4 flex items-center gap-2">
-              <CountryFlag country={client.country} showLabel />
+              <CountryFlag region={client.region} showLabel />
             </div>
             <dl className="space-y-3 text-sm">
+              {client.company_name && (
+                <div className="flex items-center gap-2 text-foreground">
+                  {client.company_name}
+                </div>
+              )}
               {client.email && (
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Mail className="h-4 w-4" />
@@ -117,9 +122,9 @@ export default function ClientDetailPage() {
                   </a>
                 </div>
               )}
-              {client.phone && (
+              {client.representative_phone && (
                 <div className="flex items-center gap-2 text-muted-foreground">
-                  <Phone className="h-4 w-4" /> {client.phone}
+                  <Phone className="h-4 w-4" /> {client.representative_phone}
                 </div>
               )}
               {client.address && (
@@ -137,36 +142,24 @@ export default function ClientDetailPage() {
 
           <Card padding="none">
             <h3 className="border-b border-border px-5 py-3 text-sm font-semibold text-foreground">
-              Representatives
+              Representative
             </h3>
-            {client.representatives && client.representatives.length > 0 ? (
-              <ul className="divide-y divide-border">
-                {client.representatives.map((r) => (
-                  <li
-                    key={r.id}
-                    className="flex items-center gap-3 px-5 py-3"
-                  >
-                    <Avatar name={r.name} size="sm" />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-foreground">
-                        {r.name}
-                        {r.is_primary && (
-                          <Badge variant="primary" size="sm" className="ml-2">
-                            Primary
-                          </Badge>
-                        )}
-                      </p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {r.role || 'Representative'}
-                      </p>
-                    </div>
-                    <CallWhatsappButtons phone={r.phone} />
-                  </li>
-                ))}
-              </ul>
+            {client.representative_name ? (
+              <div className="flex items-center gap-3 px-5 py-3">
+                <Avatar name={client.representative_name} size="sm" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-foreground">
+                    {client.representative_name}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {client.representative_phone || 'Representative'}
+                  </p>
+                </div>
+                <CallWhatsappButtons phone={client.representative_phone} />
+              </div>
             ) : (
               <p className="px-5 py-6 text-center text-sm text-muted-foreground">
-                No representatives.
+                No representative on file.
               </p>
             )}
           </Card>

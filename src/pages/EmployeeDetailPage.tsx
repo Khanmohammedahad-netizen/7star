@@ -88,14 +88,14 @@ export default function EmployeeDetailPage() {
 
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
-          <Avatar name={employee.full_name} src={employee.photo_url} size="lg" />
+          <Avatar name={employee.full_name} size="lg" />
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">
               {employee.full_name}
             </h1>
             <p className="mt-0.5 flex items-center gap-2 text-sm capitalize text-muted-foreground">
-              {employee.role}
-              <CountryFlag country={employee.country_of_work} />
+              {employee.position || 'Employee'}
+              <CountryFlag region={employee.region} />
             </p>
           </div>
         </div>
@@ -116,18 +116,19 @@ export default function EmployeeDetailPage() {
         <Card className="lg:col-span-1">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="text-sm font-semibold text-foreground">Visa status</h3>
-            <VisaStatusBadge expiryDate={employee.visa_expiry_date} />
+            <VisaStatusBadge expiryDate={employee.visa_expiry} />
           </div>
           <dl className="space-y-3">
             <Field label="Visa number" value={employee.visa_number} />
             <Field
-              label="Visa issued"
-              value={employee.visa_issued_date && formatDate(employee.visa_issued_date)}
-            />
-            <Field
               label="Visa expiry"
+              value={employee.visa_expiry && formatDate(employee.visa_expiry)}
+            />
+            <Field label="Emirates ID" value={employee.emirates_id} />
+            <Field
+              label="Emirates ID expiry"
               value={
-                employee.visa_expiry_date && formatDate(employee.visa_expiry_date)
+                employee.emirates_id_expiry && formatDate(employee.emirates_id_expiry)
               }
             />
           </dl>
@@ -143,7 +144,6 @@ export default function EmployeeDetailPage() {
                 employee.passport_expiry && formatDate(employee.passport_expiry)
               }
             />
-            <Field label="Nationality" value={employee.nationality} />
           </dl>
         </Card>
 
@@ -152,12 +152,11 @@ export default function EmployeeDetailPage() {
           <dl className="space-y-3">
             <Field label="Phone" value={employee.phone} />
             <Field label="Email" value={employee.email} />
-            <Field label="Emergency" value={employee.emergency_contact} />
             <Field
               label="Status"
               value={
-                <Badge variant="neutral" size="sm">
-                  {employee.status.replace('_', ' ')}
+                <Badge variant={employee.is_active ? 'success' : 'neutral'} size="sm">
+                  {employee.is_active ? 'Active' : 'Inactive'}
                 </Badge>
               }
             />

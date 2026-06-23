@@ -1,55 +1,46 @@
 import { supabase } from '../supabase';
-import type { MaterialCatalogItem, ProjectMaterial } from '../../types/database';
+import type { Material } from '../../types/database';
 
-export async function getCatalog(): Promise<MaterialCatalogItem[]> {
+export async function getMaterials(): Promise<Material[]> {
   const { data, error } = await supabase
-    .from('materials_catalog')
+    .from('materials')
     .select('*')
-    .order('name', { ascending: true });
+    .order('created_at', { ascending: false });
   if (error) throw error;
-  return (data as MaterialCatalogItem[]) ?? [];
+  return (data as Material[]) ?? [];
 }
 
-export async function createCatalogItem(
-  input: Omit<MaterialCatalogItem, 'id' | 'created_at'>
-): Promise<MaterialCatalogItem> {
+export async function getProjectMaterials(eventId: string): Promise<Material[]> {
   const { data, error } = await supabase
-    .from('materials_catalog')
+    .from('materials')
+    .select('*')
+    .eq('event_id', eventId)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return (data as Material[]) ?? [];
+}
+
+export async function createMaterial(
+  input: Partial<Material>
+): Promise<Material> {
+  const { data, error } = await supabase
+    .from('materials')
     .insert(input)
     .select()
     .single();
   if (error) throw error;
-  return data as MaterialCatalogItem;
+  return data as Material;
 }
 
-export async function deleteCatalogItem(id: string): Promise<void> {
-  const { error } = await supabase.from('materials_catalog').delete().eq('id', id);
+export async function updateMaterial(
+  id: string,
+  input: Partial<Material>
+): Promise<void> {
+  const { error } = await supabase.from('materials').update(input).eq('id', id);
   if (error) throw error;
 }
 
-export async function getProjectMaterials(
-  projectId: string
-): Promise<ProjectMaterial[]> {
-  const { data, error } = await supabase
-    .from('project_materials')
-    .select('*, material:materials_catalog(*)')
-    .eq('project_id', projectId);
-  if (error) throw error;
-  return (data as ProjectMaterial[]) ?? [];
-}
-
-export async function addProjectMaterial(input: {
-  project_id: string;
-  material_id: string;
-  quantity: number;
-  unit_cost_snapshot: number;
-  notes?: string | null;
-}): Promise<void> {
-  const { error } = await supabase.from('project_materials').insert(input);
-  if (error) throw error;
-}
-
-export async function removeProjectMaterial(id: string): Promise<void> {
-  const { error } = await supabase.from('project_materials').delete().eq('id', id);
+export async function deleteMaterial(id: string): Promise<void> {
+  const { error } = await supabase.from('materials').delete().eq('id', id);
   if (error) throw error;
 }

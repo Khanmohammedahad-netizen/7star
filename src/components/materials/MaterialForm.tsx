@@ -7,35 +7,35 @@ import { Modal } from '../ui/Modal';
 import { Input } from '../ui/Input';
 import { Select, Textarea } from '../ui/Select';
 import { Button } from '../ui/Button';
-import { supabase } from '../../lib/supabase';
-import { createCatalogItem } from '../../lib/api/materials';
-import type { MaterialCatalogItem } from '../../types/database';
+import { createMaterial, updateMaterial } from '../../lib/api/materials';
+import { getProjects } from '../../lib/api/projects';
+import type { Material, Event } from '../../types/database';
 
 const schema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  sku: z.string().optional(),
-  unit: z.string().min(1, 'Unit is required'),
+  material_name: z.string().min(1, 'Name is required'),
+  event_id: z.string().optional(),
+  unit: z.string().optional(),
+  quantity: z.string().optional(),
   unit_cost: z.string().optional(),
-  stock_qty: z.string().optional(),
-  country: z.enum(['UAE', 'SA', '']).optional(),
   supplier: z.string().optional(),
+  region: z.enum(['UAE', 'SAUDI']),
   notes: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
-
 const UNITS = ['pcs', 'm', 'kg', 'set', 'box', 'roll', 'l'];
 
 interface Props {
   open: boolean;
   onClose: () => void;
   onSaved: () => void;
-  item?: MaterialCatalogItem | null;
+  item?: Material | null;
 }
 
 export function MaterialForm({ open, onClose, onSaved, item }: Props) {
   const editing = !!item;
   const [saving, setSaving] = useState(false);
+  const [projects, setProjects] = useState<Event[]>([]);
 
   const {
     register,
@@ -45,53 +45,55 @@ export function MaterialForm({ open, onClose, onSaved, item }: Props) {
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      name: '',
-      sku: '',
+      material_name: '',
+      event_id: '',
       unit: 'pcs',
-      unit_cost: '',
-      stock_qty: '',
-      country: '',
+      quantity: '1',
+      unit_cost: '0',
       supplier: '',
+      region: 'UAE',
       notes: '',
     },
   });
 
   useEffect(() => {
     if (!open) return;
+    getProjects().then(setProjects).catch(() => setProjects([]));
     reset({
-      name: item?.name ?? '',
-      sku: item?.sku ?? '',
+      material_name: item?.material_name ?? '',
+      event_id: item?.event_id ?? '',
       unit: item?.unit ?? 'pcs',
-      unit_cost: item?.unit_cost != null ? String(item.unit_cost) : '',
-      stock_qty: item?.stock_qty != null ? String(item.stock_qty) : '',
-      country: (item?.country as 'UAE' | 'SA' | undefined) ?? '',
+      quantity: item?.quantity != null ? String(item.quantity) : '1',
+      unit_cost: item?.unit_cost != null ? String(item.unit_cost) : '0',
       supplier: item?.supplier ?? '',
+      region: item?.region ?? 'UAE',
       notes: item?.notes ?? '',
     });
   }, [open, item, reset]);
 
   const onSubmit = async (values: FormValues) => {
     setSaving(true);
+    const qty = Number(values.quantity) || 0;
+    const cost = Number(values.unit_cost) || 0;
     const payload = {
-      name: values.name,
-      sku: values.sku || null,
-      unit: values.unit,
-      unit_cost: values.unit_cost ? Number(values.unit_cost) : 0,
-      stock_qty: values.stock_qty ? Number(values.stock_qty) : 0,
-      country: values.country ? (values.country as 'UAE' | 'SA') : null,
+      material_name: values.material_name,
+      event_id: values.event_id || null,
+      unit: values.unit || null,
+      quantity: qty,
+      unit_cost: cost,
+      unit_price: cost,
+      total_cost: qty * cost,
       supplier: values.supplier || null,
+      region: values.region,
+      is_active: true,
       notes: values.notes || null,
     };
     try {
       if (editing && item) {
-        const { error } = await supabase
-          .from('materials_catalog')
-          .update(payload)
-          .eq('id', item.id);
-        if (error) throw error;
+        await updateMaterial(item.id, payload);
         toast.success('Material updated');
       } else {
-        await createCatalogItem(payload);
+        await createMaterial(payload);
         toast.success('Material added');
       }
       onSaved();
@@ -123,43 +125,34 @@ export function MaterialForm({ open, onClose, onSaved, item }: Props) {
         <Input
           label="Name"
           required
-          error={errors.name?.message}
-          {...register('name')}
+          error={errors.material_name?.message}
+          {...register('material_name')}
         />
-        <div className="grid grid-cols-2 gap-4">
-          <Input label="SKU" {...register('sku')} />
+        <Select
+          label="Project"
+          placeholder="— None —"
+          options={projects.map((p) => ({ value: p.id, label: p.title }))}
+          {...register('event_id')}
+        />
+        <div className="grid grid-cols-3 gap-4">
           <Select
             label="Unit"
             options={UNITS.map((u) => ({ value: u, label: u }))}
             {...register('unit')}
           />
+          <Input label="Quantity" type="number" step="0.01" {...register('quantity')} />
+          <Input label="Unit cost" type="number" step="0.01" {...register('unit_cost')} />
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <Input
-            label="Unit cost"
-            type="number"
-            step="0.01"
-            inputMode="decimal"
-            {...register('unit_cost')}
-          />
-          <Input
-            label="Stock qty"
-            type="number"
-            step="0.01"
-            {...register('stock_qty')}
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-4">
+          <Input label="Supplier" {...register('supplier')} />
           <Select
-            label="Country"
-            placeholder="— Any —"
+            label="Region"
             options={[
               { value: 'UAE', label: 'UAE' },
-              { value: 'SA', label: 'Saudi' },
+              { value: 'SAUDI', label: 'Saudi' },
             ]}
-            {...register('country')}
+            {...register('region')}
           />
-          <Input label="Supplier" {...register('supplier')} />
         </div>
         <Textarea label="Notes" rows={2} {...register('notes')} />
       </form>

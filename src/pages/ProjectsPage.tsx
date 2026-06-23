@@ -9,9 +9,10 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { ProjectDrawer } from '../components/projects/ProjectDrawer';
 import { ProjectForm } from '../components/projects/ProjectForm';
 import { getProjects } from '../lib/api/projects';
-import { PROJECT_STATUS } from '../lib/status';
-import { COUNTRY_FLAG, CURRENCY_BY_COUNTRY } from '../lib/constants';
+import { projectStatus } from '../lib/status';
+import { REGION_FLAG, regionCurrency } from '../lib/constants';
 import { formatCurrency, formatDate } from '../lib/utils';
+import type { Region } from '../types/database';
 import { toast } from 'sonner';
 import type { Event } from '../types/database';
 
@@ -113,9 +114,8 @@ export default function ProjectsPage() {
               </thead>
               <tbody>
                 {filtered.map((p) => {
-                  const country =
-                    p.country ?? (p.region === 'saudi' ? 'SA' : 'UAE');
-                  const meta = PROJECT_STATUS[p.status];
+                  const region: Region = p.region === 'SAUDI' ? 'SAUDI' : 'UAE';
+                  const meta = projectStatus(p.status);
                   return (
                     <tr
                       key={p.id}
@@ -127,7 +127,7 @@ export default function ProjectsPage() {
                     >
                       <td className="px-5 py-3.5">
                         <span className="mr-2" aria-hidden>
-                          {COUNTRY_FLAG[country]}
+                          {REGION_FLAG[region]}
                         </span>
                         <span className="font-medium text-foreground">
                           {p.title}
@@ -140,8 +140,8 @@ export default function ProjectsPage() {
                         {formatDate(p.event_date)}
                       </td>
                       <td className="px-5 py-3.5 tnum text-muted-foreground">
-                        {p.budget != null
-                          ? formatCurrency(p.budget, CURRENCY_BY_COUNTRY[country])
+                        {p.budget_total != null
+                          ? formatCurrency(p.budget_total, regionCurrency(region))
                           : '—'}
                       </td>
                       <td className="px-5 py-3.5">

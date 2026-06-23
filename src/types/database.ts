@@ -1,38 +1,24 @@
 import type { UserRole } from './roles';
 export type { UserRole };
-export type Region = 'uae' | 'saudi';
-export type CountryCode = 'UAE' | 'SA';
+
+export type Region = 'UAE' | 'SAUDI';
 export type CurrencyCode = 'AED' | 'SAR';
+/** events.status is free text; these are the values seen in production. */
 export type EventStatus =
   | 'draft'
-  | 'planned'
+  | 'planning'
   | 'confirmed'
   | 'in_progress'
   | 'completed'
   | 'cancelled';
-export type PaymentType = 'received' | 'pending';
-export type PaymentStatus = 'pending' | 'completed' | 'overdue';
-export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue';
 export type DocStatus =
   | 'draft'
   | 'sent'
   | 'accepted'
   | 'rejected'
-  | 'expired'
   | 'paid'
   | 'overdue'
   | 'cancelled';
-export type EmployeeStatus = 'active' | 'on_leave' | 'terminated';
-export type NotificationSeverity = 'info' | 'warning' | 'critical';
-export type NotificationType =
-  | 'visa_expiry'
-  | 'passport_expiry'
-  | 'invoice_due'
-  | 'quotation_expiry'
-  | 'project_starting';
-export type AccountType = 'cash' | 'bank' | 'investment' | 'loan' | 'credit_card';
-export type TxnType = 'credit' | 'debit' | 'transfer';
-export type VisaBucket = 'expired' | 'critical' | 'warning' | 'caution' | 'ok';
 
 export interface Profile {
   id: string;
@@ -40,8 +26,45 @@ export interface Profile {
   full_name: string;
   role: UserRole;
   region: Region;
-  contact_number: string;
-  country?: CountryCode | null;
+  contact_number: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Client {
+  id: string;
+  name: string;
+  company_name: string | null;
+  representative_name: string | null;
+  representative_phone: string | null;
+  email: string | null;
+  address: string | null;
+  region: Region;
+  country: string | null;
+  is_active: boolean;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Employee {
+  id: string;
+  full_name: string;
+  email: string | null;
+  phone: string | null;
+  emirates_id: string | null;
+  emirates_id_expiry: string | null;
+  emirates_id_image_url: string | null;
+  passport_number: string | null;
+  passport_expiry: string | null;
+  passport_image_url: string | null;
+  visa_number: string | null;
+  visa_expiry: string | null;
+  position: string | null;
+  region: Region;
+  is_active: boolean;
+  created_by: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -51,231 +74,152 @@ export interface Event {
   title: string;
   description: string | null;
   region: Region;
-  country?: CountryCode | null;
   event_date: string;
   end_date: string | null;
-  status: EventStatus;
+  event_end_date: string | null;
+  status: EventStatus | string;
   manager_id: string | null;
-  client_id?: string | null;
-  representative_id?: string | null;
-  budget?: number | null;
+  client_id: string | null;
   location: string | null;
-  location_lat?: number | null;
-  location_lng?: number | null;
+  venue_name: string | null;
+  type: string | null;
+  expected_guests: number | null;
+  staff_count: number | null;
+  budget_total: number | null;
+  color: string | null;
+  notes: string | null;
+  approved_by: string | null;
+  approved_at: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
-  manager?: Profile;
-  client?: Client;
+  client?: Pick<Client, 'id' | 'name' | 'company_name' | 'region'> | null;
+  manager?: Pick<Profile, 'id' | 'full_name'> | null;
 }
 
 export interface Material {
   id: string;
-  event_id: string;
+  event_id: string | null;
   material_name: string;
+  description: string | null;
+  size: string | null;
   quantity: number;
-  unit: string;
-  unit_cost: number;
-  total_cost: number;
+  unit: string | null;
+  unit_cost: number | null;
+  unit_price: number | null;
+  total_cost: number | null;
   supplier: string | null;
+  region: Region | null;
+  is_active: boolean;
   notes: string | null;
   created_at: string;
-  updated_at: string;
 }
 
-export interface Payment {
-  id: string;
-  event_id: string;
-  amount: number;
-  payment_type: PaymentType;
-  payment_date: string;
-  payment_method: string | null;
-  client_name: string;
-  notes: string | null;
-  status: PaymentStatus;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Invoice {
-  id: string;
-  invoice_number: string;
-  event_id: string;
-  client_name: string;
-  client_contact: string;
-  client_id?: string | null;
-  quotation_id?: string | null;
-  country?: CountryCode | null;
-  currency?: CurrencyCode | null;
-  issue_date: string;
-  due_date: string;
-  subtotal?: number | null;
-  vat_rate?: number | null;
-  vat_amount?: number | null;
-  total_amount: number;
-  paid_amount?: number | null;
-  paid_at?: string | null;
-  payment_method?: string | null;
-  terms?: string | null;
-  status: InvoiceStatus;
-  notes: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface LineItem {
-  id: string;
-  position: number;
+/** Shared jsonb line-item shape for quotations.items / invoices.line_items */
+export interface DocItem {
+  serial_no?: number;
   description: string;
-  qty: number;
-  unit_price: number;
-  total: number;
-}
-
-export interface Client {
-  id: string;
-  name: string;
-  country: CountryCode;
-  email: string | null;
-  phone: string | null;
-  address: string | null;
-  notes: string | null;
-  created_at: string;
-  updated_at: string;
-  representatives?: ClientRepresentative[];
-}
-
-export interface ClientRepresentative {
-  id: string;
-  client_id: string;
-  name: string;
-  phone: string;
-  email: string | null;
-  role: string | null;
-  is_primary: boolean;
-  created_at: string;
-}
-
-export interface Employee {
-  id: string;
-  user_id: string | null;
-  full_name: string;
-  phone: string;
-  email: string | null;
-  role: string;
-  nationality: string | null;
-  country_of_work: CountryCode;
-  visa_number: string | null;
-  visa_issued_date: string | null;
-  visa_expiry_date: string | null;
-  passport_number: string | null;
-  passport_expiry: string | null;
-  emergency_contact: string | null;
-  photo_url: string | null;
-  status: EmployeeStatus;
-  created_at: string;
-}
-
-export interface EmployeeVisaStatus {
-  id: string;
-  full_name: string;
-  phone: string;
-  country_of_work: CountryCode;
-  visa_expiry_date: string;
-  days_until_expiry: number;
-  visa_status_bucket: VisaBucket;
-}
-
-export interface ProjectAssignment {
-  id: string;
-  project_id: string;
-  employee_id: string;
-  role_on_project: string | null;
-  is_manager: boolean;
-  assigned_at: string;
-  employee?: Employee;
-}
-
-export interface MaterialCatalogItem {
-  id: string;
-  name: string;
-  sku: string | null;
-  unit: string;
-  unit_cost: number;
-  stock_qty: number;
-  country: CountryCode | null;
-  supplier: string | null;
-  notes: string | null;
-  created_at: string;
-}
-
-export interface ProjectMaterial {
-  id: string;
-  project_id: string;
-  material_id: string;
+  size?: string | null;
   quantity: number;
-  unit_cost_snapshot: number;
-  notes: string | null;
-  created_at: string;
-  material?: MaterialCatalogItem;
+  rate: number;
+  amount: number;
 }
 
 export interface Quotation {
   id: string;
-  quote_number: string;
-  project_id: string | null;
+  quotation_number: string | null;
+  event_id: string | null;
   client_id: string | null;
-  representative_id: string | null;
-  country: CountryCode;
-  currency: CurrencyCode;
-  issue_date: string;
-  valid_until: string;
-  status: DocStatus;
-  subtotal: number;
-  vat_rate: number;
-  vat_amount: number;
-  total: number;
-  terms: string | null;
-  notes: string | null;
+  items: DocItem[] | null;
+  net_amount: number | null;
+  total_amount: number | null;
+  quotation_date: string | null;
+  status: DocStatus | string;
+  region: Region;
   created_by: string | null;
   created_at: string;
-  client?: Client;
-  line_items?: LineItem[];
+  updated_at: string;
+  client?: Pick<Client, 'id' | 'name'> | null;
 }
 
-export interface Notification {
+export interface Invoice {
   id: string;
-  recipient_user_id: string;
-  type: NotificationType;
-  title: string;
-  message: string;
-  related_table: string | null;
-  related_id: string | null;
-  severity: NotificationSeverity;
-  read_at: string | null;
-  created_at: string;
-}
-
-export interface PersonalAccount {
-  id: string;
-  owner_user_id: string;
-  account_name: string;
-  account_type: AccountType;
-  currency: string;
-  opening_balance: number;
-  current_balance: number;
+  invoice_number: string | null;
+  doc_number: string | null;
+  doc_type: string | null;
+  event_id: string | null;
+  client_id: string | null;
+  quotation_id: string | null;
+  client_name: string | null;
+  client_contact: string | null;
+  issue_date: string | null;
+  invoice_date: string | null;
+  due_date: string | null;
+  line_items: DocItem[] | null;
+  subtotal: number | null;
+  net_amount: number | null;
+  vat_amount: number | null;
+  total_amount: number | null;
+  total: number | null;
+  amount_paid: number | null;
+  balance: number | null;
+  status: DocStatus | string;
+  region: Region;
   notes: string | null;
   created_at: string;
+  updated_at: string;
+  client?: Pick<Client, 'id' | 'name'> | null;
 }
 
-export interface PersonalTransaction {
+export interface Payment {
   id: string;
-  account_id: string;
-  date: string;
-  type: TxnType;
+  event_id: string | null;
+  invoice_id: string | null;
   amount: number;
-  category: string | null;
-  counterparty: string | null;
+  payment_type: string | null;
+  payment_date: string | null;
+  payment_method: string | null;
+  payment_mode: string | null;
+  client_name: string | null;
+  status: string | null;
+  region: Region | null;
   notes: string | null;
+  created_at: string;
+}
+
+/** personal_accounts is a flat single-ledger table. */
+export interface PersonalEntry {
+  id: string;
+  entry_date: string;
+  description: string | null;
+  credit: number | null;
+  debit: number | null;
+  mode_of_payment: string | null;
+  remarks: string | null;
+  created_at: string;
+}
+
+export interface CompanyEntry {
+  id: string;
+  entry_date: string;
+  project_name: string | null;
+  expense_head: string | null;
+  description: string | null;
+  amount: number | null;
+  vat: number | null;
+  total: number | null;
+  mode_of_payment: string | null;
+  invoice_available: boolean | null;
+  invoice_date: string | null;
+  region: Region | null;
+  created_at: string;
+}
+
+export interface ActivityLog {
+  id: string;
+  org_id: string | null;
+  type: string | null;
+  title: string;
+  description: string | null;
   created_at: string;
 }

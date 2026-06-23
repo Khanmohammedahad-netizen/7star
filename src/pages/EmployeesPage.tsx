@@ -15,12 +15,6 @@ import { getEmployees } from '../lib/api/employees';
 import { toast } from 'sonner';
 import type { Employee } from '../types/database';
 
-const statusVariant: Record<string, 'success' | 'warning' | 'neutral'> = {
-  active: 'success',
-  on_leave: 'warning',
-  terminated: 'neutral',
-};
-
 export default function EmployeesPage() {
   const navigate = useNavigate();
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -108,7 +102,7 @@ export default function EmployeesPage() {
                   >
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
-                        <Avatar name={e.full_name} src={e.photo_url} size="sm" />
+                        <Avatar name={e.full_name} size="sm" />
                         <div>
                           <p className="font-medium text-foreground">
                             {e.full_name}
@@ -120,17 +114,17 @@ export default function EmployeesPage() {
                       </div>
                     </td>
                     <td className="px-5 py-3 capitalize text-muted-foreground">
-                      {e.role}
+                      {e.position || '—'}
                     </td>
                     <td className="px-5 py-3">
-                      <CountryFlag country={e.country_of_work} />
+                      <CountryFlag region={e.region} />
                     </td>
                     <td className="px-5 py-3">
-                      <VisaStatusBadge expiryDate={e.visa_expiry_date} size="sm" />
+                      <VisaStatusBadge expiryDate={e.visa_expiry} size="sm" />
                     </td>
                     <td className="px-5 py-3">
-                      <Badge variant={statusVariant[e.status]} size="sm">
-                        {e.status.replace('_', ' ')}
+                      <Badge variant={e.is_active ? 'success' : 'neutral'} size="sm">
+                        {e.is_active ? 'Active' : 'Inactive'}
                       </Badge>
                     </td>
                   </tr>

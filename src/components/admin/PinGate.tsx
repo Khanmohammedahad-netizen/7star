@@ -2,8 +2,13 @@ import { useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Lock } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { getPinHash, setPinHash } from '../../lib/api/personal';
-import { hashPin, isUnlocked, markUnlocked } from '../../lib/pin';
+import {
+  hashPin,
+  isUnlocked,
+  markUnlocked,
+  getStoredPinHash,
+  setStoredPinHash,
+} from '../../lib/pin';
 import { Spinner } from '../ui/Spinner';
 import { toast } from 'sonner';
 
@@ -23,10 +28,8 @@ export function PinGate() {
       setChecking(false);
       return;
     }
-    if (!user) return;
-    getPinHash(user.id)
-      .then((h) => setHasPin(!!h))
-      .finally(() => setChecking(false));
+    setHasPin(!!getStoredPinHash());
+    setChecking(false);
   }, [user]);
 
   const submit = async (e: React.FormEvent) => {
@@ -41,8 +44,7 @@ export function PinGate() {
     try {
       const hash = await hashPin(pin);
       if (hasPin) {
-        const stored = await getPinHash(user.id);
-        if (stored !== hash) {
+        if (getStoredPinHash() !== hash) {
           setError('Incorrect PIN.');
           setBusy(false);
           return;
@@ -53,7 +55,7 @@ export function PinGate() {
           setBusy(false);
           return;
         }
-        await setPinHash(user.id, hash);
+        setStoredPinHash(hash);
         toast.success('PIN set');
       }
       markUnlocked();

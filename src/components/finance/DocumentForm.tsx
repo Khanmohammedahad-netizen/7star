@@ -12,31 +12,24 @@ import { getClients } from '../../lib/api/clients';
 import { createQuotation, updateQuotation } from '../../lib/api/quotations';
 import { createInvoice, updateInvoice } from '../../lib/api/invoices';
 import { computeTotals } from '../../lib/utils/vat';
-import { CURRENCY_BY_COUNTRY } from '../../lib/constants';
+import { regionCurrency } from '../../lib/constants';
 import { formatCurrency } from '../../lib/utils';
-import type {
-  Client,
-  CountryCode,
-  Quotation,
-} from '../../types/database';
-import type { InvoiceWithItems } from '../../lib/api/invoices';
+import type { Client, Region, Quotation, Invoice } from '../../types/database';
 
 const schema = z.object({
   client_id: z.string().optional(),
-  country: z.enum(['UAE', 'SA']),
+  region: z.enum(['UAE', 'SAUDI']),
   issue_date: z.string().min(1, 'Required'),
-  second_date: z.string().min(1, 'Required'),
+  due_date: z.string().optional(),
   status: z.string(),
-  client_name: z.string().optional(),
   client_contact: z.string().optional(),
-  terms: z.string().optional(),
   notes: z.string().optional(),
   items: z
     .array(
       z.object({
         description: z.string().min(1, 'Required'),
-        qty: z.string(),
-        unit_price: z.string(),
+        quantity: z.string(),
+        rate: z.string(),
       })
     )
     .min(1, 'Add at least one line item'),
@@ -49,35 +42,29 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onSaved: (id: string) => void;
-  existing?: Quotation | InvoiceWithItems | null;
+  existing?: Quotation | Invoice | null;
 }
 
-function LiveTotals({
-  control,
-  country,
-}: {
-  control: Control<FormValues>;
-  country: CountryCode;
-}) {
+function LiveTotals({ control, region }: { control: Control<FormValues>; region: Region }) {
   const items = useWatch({ control, name: 'items' }) ?? [];
   const totals = useMemo(
     () =>
       computeTotals(
         items.map((i) => ({
           description: i?.description ?? '',
-          qty: Number(i?.qty) || 0,
-          unit_price: Number(i?.unit_price) || 0,
+          quantity: Number(i?.quantity) || 0,
+          rate: Number(i?.rate) || 0,
         })),
-        country
+        region
       ),
-    [items, country]
+    [items, region]
   );
-  const currency = CURRENCY_BY_COUNTRY[country];
+  const currency = regionCurrency(region);
   return (
     <div className="ml-auto w-full max-w-xs space-y-1.5 text-sm">
       <div className="flex justify-between text-muted-foreground">
         <span>Subtotal</span>
-        <span className="tnum">{formatCurrency(totals.subtotal, currency)}</span>
+        <span className="tnum">{formatCurrency(totals.net_amount, currency)}</span>
       </div>
       <div className="flex justify-between text-muted-foreground">
         <span>VAT ({(totals.vat_rate * 100).toFixed(0)}%)</span>
@@ -85,13 +72,13 @@ function LiveTotals({
       </div>
       <div className="flex justify-between border-t border-border pt-1.5 text-base font-semibold text-foreground">
         <span>Total</span>
-        <span className="tnum">{formatCurrency(totals.total, currency)}</span>
+        <span className="tnum">{formatCurrency(totals.total_amount, currency)}</span>
       </div>
     </div>
   );
 }
 
-const QUOTE_STATUS = ['draft', 'sent', 'accepted', 'rejected', 'expired'];
+const QUOTE_STATUS = ['draft', 'sent', 'accepted', 'rejected'];
 const INVOICE_STATUS = ['draft', 'sent', 'paid', 'overdue'];
 
 export function DocumentForm({ kind, open, onClose, onSaved, existing }: Props) {
@@ -111,75 +98,65 @@ export function DocumentForm({ kind, open, onClose, onSaved, existing }: Props) 
     resolver: zodResolver(schema),
     defaultValues: {
       client_id: '',
-      country: 'UAE',
+      region: 'UAE',
       issue_date: new Date().toISOString().slice(0, 10),
-      second_date: '',
+      due_date: '',
       status: 'draft',
-      client_name: '',
       client_contact: '',
-      terms: '',
       notes: '',
-      items: [{ description: '', qty: '1', unit_price: '0' }],
+      items: [{ description: '', quantity: '1', rate: '0' }],
     },
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: 'items' });
-  const country = (watch('country') as CountryCode) ?? 'UAE';
+  const region = (watch('region') as Region) ?? 'UAE';
 
   useEffect(() => {
     if (!open) return;
     getClients().then(setClients).catch(() => setClients([]));
 
-    const second =
-      (existing as Quotation)?.valid_until ??
-      (existing as InvoiceWithItems)?.due_date ??
-      new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
-
+    const q = existing as Quotation | null;
+    const inv = existing as Invoice | null;
+    const items = isQuote ? q?.items : inv?.line_items;
+    const firstDate = isQuote
+      ? q?.quotation_date
+      : inv?.issue_date ?? inv?.invoice_date;
     reset({
       client_id: existing?.client_id ?? '',
-      country: (existing?.country as CountryCode) ?? 'UAE',
-      issue_date: existing?.issue_date?.slice(0, 10) ?? new Date().toISOString().slice(0, 10),
-      second_date: second?.slice(0, 10) ?? '',
+      region: (existing?.region as Region) ?? 'UAE',
+      issue_date: firstDate?.slice(0, 10) ?? new Date().toISOString().slice(0, 10),
+      due_date: inv?.due_date?.slice(0, 10) ?? '',
       status: existing?.status ?? 'draft',
-      client_name: (existing as InvoiceWithItems)?.client_name ?? '',
-      client_contact: (existing as InvoiceWithItems)?.client_contact ?? '',
-      terms: existing?.terms ?? '',
-      notes: existing?.notes ?? '',
+      client_contact: inv?.client_contact ?? '',
+      notes: inv?.notes ?? '',
       items:
-        existing?.line_items && existing.line_items.length > 0
-          ? existing.line_items.map((li) => ({
+        items && items.length > 0
+          ? items.map((li) => ({
               description: li.description,
-              qty: String(li.qty),
-              unit_price: String(li.unit_price),
+              quantity: String(li.quantity),
+              rate: String(li.rate),
             }))
-          : [{ description: '', qty: '1', unit_price: '0' }],
+          : [{ description: '', quantity: '1', rate: '0' }],
     });
-  }, [open, existing, reset]);
+  }, [open, existing, isQuote, reset]);
 
   const onSubmit = async (values: FormValues) => {
     setSaving(true);
-    const currency = CURRENCY_BY_COUNTRY[values.country];
     const items = values.items.map((i) => ({
       description: i.description,
-      qty: Number(i.qty),
-      unit_price: Number(i.unit_price),
+      quantity: Number(i.quantity) || 0,
+      rate: Number(i.rate) || 0,
     }));
     const clientName =
-      clients.find((c) => c.id === values.client_id)?.name ||
-      values.client_name ||
-      'Client';
+      clients.find((c) => c.id === values.client_id)?.name || 'Client';
     try {
       let id: string;
       if (isQuote) {
         const payload = {
           client_id: values.client_id || null,
-          country: values.country,
-          currency,
-          issue_date: values.issue_date,
-          valid_until: values.second_date,
-          status: values.status as Quotation['status'],
-          terms: values.terms || null,
-          notes: values.notes || null,
+          region: values.region,
+          quotation_date: values.issue_date,
+          status: values.status,
         };
         const res =
           editing && existing
@@ -191,12 +168,10 @@ export function DocumentForm({ kind, open, onClose, onSaved, existing }: Props) 
           client_id: values.client_id || null,
           client_name: clientName,
           client_contact: values.client_contact || '',
-          country: values.country,
-          currency,
+          region: values.region,
           issue_date: values.issue_date,
-          due_date: values.second_date,
-          status: values.status as InvoiceWithItems['status'],
-          terms: values.terms || null,
+          due_date: values.due_date || values.issue_date,
+          status: values.status,
           notes: values.notes || null,
         };
         const res =
@@ -226,11 +201,7 @@ export function DocumentForm({ kind, open, onClose, onSaved, existing }: Props) 
     <Modal
       isOpen={open}
       onClose={onClose}
-      title={
-        editing
-          ? `Edit ${isQuote ? 'quotation' : 'invoice'}`
-          : `New ${isQuote ? 'quotation' : 'invoice'}`
-      }
+      title={editing ? `Edit ${kind}` : `New ${kind}`}
       size="lg"
       footer={
         <>
@@ -252,36 +223,30 @@ export function DocumentForm({ kind, open, onClose, onSaved, existing }: Props) 
             {...register('client_id')}
           />
           <Select
-            label="Country"
+            label="Region"
             options={[
               { value: 'UAE', label: 'UAE (5% VAT)' },
-              { value: 'SA', label: 'Saudi (15% VAT)' },
+              { value: 'SAUDI', label: 'Saudi (15% VAT)' },
             ]}
-            {...register('country')}
+            {...register('region')}
           />
         </div>
 
         <div className="grid grid-cols-3 gap-4">
           <Input
-            label="Issue date"
+            label={isQuote ? 'Quotation date' : 'Issue date'}
             type="date"
             error={errors.issue_date?.message}
             {...register('issue_date')}
           />
-          <Input
-            label={isQuote ? 'Valid until' : 'Due date'}
-            type="date"
-            error={errors.second_date?.message}
-            {...register('second_date')}
-          />
+          {!isQuote && (
+            <Input label="Due date" type="date" {...register('due_date')} />
+          )}
           <Select label="Status" options={statusOptions} {...register('status')} />
         </div>
 
-        {!isQuote && (
-          <Input label="Client contact" {...register('client_contact')} />
-        )}
+        {!isQuote && <Input label="Client contact" {...register('client_contact')} />}
 
-        {/* Line items */}
         <div>
           <div className="mb-2 flex items-center justify-between">
             <h4 className="text-sm font-semibold text-foreground">Line items</h4>
@@ -289,9 +254,7 @@ export function DocumentForm({ kind, open, onClose, onSaved, existing }: Props) 
               type="button"
               size="sm"
               variant="secondary"
-              onClick={() =>
-                append({ description: '', qty: '1', unit_price: '0' })
-              }
+              onClick={() => append({ description: '', quantity: '1', rate: '0' })}
             >
               <Plus className="h-4 w-4" /> Add line
             </Button>
@@ -308,20 +271,8 @@ export function DocumentForm({ kind, open, onClose, onSaved, existing }: Props) 
                   error={errors.items?.[i]?.description?.message}
                   {...register(`items.${i}.description`)}
                 />
-                <Input
-                  placeholder="Qty"
-                  type="number"
-                  step="0.01"
-                  className="w-20"
-                  {...register(`items.${i}.qty`)}
-                />
-                <Input
-                  placeholder="Price"
-                  type="number"
-                  step="0.01"
-                  className="w-28"
-                  {...register(`items.${i}.unit_price`)}
-                />
+                <Input placeholder="Qty" type="number" step="0.01" className="w-20" {...register(`items.${i}.quantity`)} />
+                <Input placeholder="Rate" type="number" step="0.01" className="w-28" {...register(`items.${i}.rate`)} />
                 <button
                   type="button"
                   onClick={() => fields.length > 1 && remove(i)}
@@ -336,11 +287,10 @@ export function DocumentForm({ kind, open, onClose, onSaved, existing }: Props) 
         </div>
 
         <div className="flex">
-          <LiveTotals control={control} country={country} />
+          <LiveTotals control={control} region={region} />
         </div>
 
-        <Textarea label="Terms" rows={2} {...register('terms')} />
-        <Textarea label="Notes" rows={2} {...register('notes')} />
+        {!isQuote && <Textarea label="Notes" rows={2} {...register('notes')} />}
       </form>
     </Modal>
   );

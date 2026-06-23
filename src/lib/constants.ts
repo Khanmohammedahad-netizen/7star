@@ -1,26 +1,27 @@
-import type { CountryCode, CurrencyCode } from '../types/database';
+import type { Region, CurrencyCode } from '../types/database';
 
-export const VAT_RATES: Record<CountryCode, number> = {
+export const REGIONS: Region[] = ['UAE', 'SAUDI'];
+
+export const VAT_RATES: Record<Region, number> = {
   UAE: 0.05,
-  SA: 0.15,
+  SAUDI: 0.15,
 };
 
-export const CURRENCY_BY_COUNTRY: Record<CountryCode, CurrencyCode> = {
+export const CURRENCY_BY_REGION: Record<Region, CurrencyCode> = {
   UAE: 'AED',
-  SA: 'SAR',
+  SAUDI: 'SAR',
 };
 
-export const COUNTRY_LABEL: Record<CountryCode, string> = {
+export const REGION_LABEL: Record<Region, string> = {
   UAE: 'United Arab Emirates',
-  SA: 'Saudi Arabia',
+  SAUDI: 'Saudi Arabia',
 };
 
-export const COUNTRY_FLAG: Record<CountryCode, string> = {
+export const REGION_FLAG: Record<Region, string> = {
   UAE: '🇦🇪',
-  SA: '🇸🇦',
+  SAUDI: '🇸🇦',
 };
 
-/** Map the legacy region field to the country code used by new tables. */
-export function regionToCountry(region?: string | null): CountryCode {
-  return region === 'saudi' ? 'SA' : 'UAE';
+export function regionCurrency(region?: string | null): CurrencyCode {
+  return region === 'SAUDI' ? 'SAR' : 'AED';
 }

@@ -12,23 +12,20 @@ import type { Employee } from '../../types/database';
 
 const schema = z.object({
   full_name: z.string().min(2, 'Name is required'),
-  phone: z.string().min(3, 'Phone is required'),
+  phone: z.string().optional(),
   email: z.string().email('Invalid email').or(z.literal('')).optional(),
-  role: z.string().min(1, 'Role is required'),
-  nationality: z.string().optional(),
-  country_of_work: z.enum(['UAE', 'SA']),
-  status: z.enum(['active', 'on_leave', 'terminated']),
+  position: z.string().optional(),
+  region: z.enum(['UAE', 'SAUDI']),
+  is_active: z.boolean(),
+  emirates_id: z.string().optional(),
+  emirates_id_expiry: z.string().optional(),
   visa_number: z.string().optional(),
-  visa_issued_date: z.string().optional(),
-  visa_expiry_date: z.string().optional(),
+  visa_expiry: z.string().optional(),
   passport_number: z.string().optional(),
   passport_expiry: z.string().optional(),
-  emergency_contact: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
-
-const ROLES = ['manager', 'technician', 'laborer', 'driver', 'admin'];
 
 interface Props {
   open: boolean;
@@ -52,16 +49,15 @@ export function EmployeeForm({ open, onClose, onSaved, employee }: Props) {
       full_name: '',
       phone: '',
       email: '',
-      role: 'technician',
-      nationality: '',
-      country_of_work: 'UAE',
-      status: 'active',
+      position: '',
+      region: 'UAE',
+      is_active: true,
+      emirates_id: '',
+      emirates_id_expiry: '',
       visa_number: '',
-      visa_issued_date: '',
-      visa_expiry_date: '',
+      visa_expiry: '',
       passport_number: '',
       passport_expiry: '',
-      emergency_contact: '',
     },
   });
 
@@ -71,16 +67,15 @@ export function EmployeeForm({ open, onClose, onSaved, employee }: Props) {
       full_name: employee?.full_name ?? '',
       phone: employee?.phone ?? '',
       email: employee?.email ?? '',
-      role: employee?.role ?? 'technician',
-      nationality: employee?.nationality ?? '',
-      country_of_work: employee?.country_of_work ?? 'UAE',
-      status: employee?.status ?? 'active',
+      position: employee?.position ?? '',
+      region: employee?.region ?? 'UAE',
+      is_active: employee?.is_active ?? true,
+      emirates_id: employee?.emirates_id ?? '',
+      emirates_id_expiry: employee?.emirates_id_expiry ?? '',
       visa_number: employee?.visa_number ?? '',
-      visa_issued_date: employee?.visa_issued_date ?? '',
-      visa_expiry_date: employee?.visa_expiry_date ?? '',
+      visa_expiry: employee?.visa_expiry ?? '',
       passport_number: employee?.passport_number ?? '',
       passport_expiry: employee?.passport_expiry ?? '',
-      emergency_contact: employee?.emergency_contact ?? '',
     });
   }, [open, employee, reset]);
 
@@ -88,20 +83,17 @@ export function EmployeeForm({ open, onClose, onSaved, employee }: Props) {
     setSaving(true);
     const payload = {
       full_name: values.full_name,
-      phone: values.phone,
+      phone: values.phone || null,
       email: values.email || null,
-      role: values.role,
-      nationality: values.nationality || null,
-      country_of_work: values.country_of_work,
-      status: values.status,
+      position: values.position || null,
+      region: values.region,
+      is_active: values.is_active,
+      emirates_id: values.emirates_id || null,
+      emirates_id_expiry: values.emirates_id_expiry || null,
       visa_number: values.visa_number || null,
-      visa_issued_date: values.visa_issued_date || null,
-      visa_expiry_date: values.visa_expiry_date || null,
+      visa_expiry: values.visa_expiry || null,
       passport_number: values.passport_number || null,
       passport_expiry: values.passport_expiry || null,
-      emergency_contact: values.emergency_contact || null,
-      user_id: employee?.user_id ?? null,
-      photo_url: employee?.photo_url ?? null,
     };
     try {
       if (editing && employee) {
@@ -145,71 +137,37 @@ export function EmployeeForm({ open, onClose, onSaved, employee }: Props) {
             error={errors.full_name?.message}
             {...register('full_name')}
           />
-          <Input
-            label="Phone"
-            required
-            error={errors.phone?.message}
-            {...register('phone')}
-          />
+          <Input label="Phone" {...register('phone')} />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <Input label="Email" type="email" {...register('email')} />
-          <Input label="Nationality" {...register('nationality')} />
+          <Input label="Position" {...register('position')} />
         </div>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <Select
-            label="Role"
-            options={ROLES.map((r) => ({
-              value: r,
-              label: r.charAt(0).toUpperCase() + r.slice(1),
-            }))}
-            {...register('role')}
-          />
-          <Select
-            label="Country of work"
+            label="Region"
             options={[
               { value: 'UAE', label: 'UAE' },
-              { value: 'SA', label: 'Saudi' },
+              { value: 'SAUDI', label: 'Saudi' },
             ]}
-            {...register('country_of_work')}
+            {...register('region')}
           />
-          <Select
-            label="Status"
-            options={[
-              { value: 'active', label: 'Active' },
-              { value: 'on_leave', label: 'On leave' },
-              { value: 'terminated', label: 'Terminated' },
-            ]}
-            {...register('status')}
-          />
+          <label className="flex items-end gap-2 pb-2 text-sm text-foreground">
+            <input type="checkbox" {...register('is_active')} /> Active
+          </label>
         </div>
 
         <div className="rounded-lg border border-border p-4">
           <h4 className="mb-3 text-sm font-semibold text-foreground">
-            Visa & passport
+            Documents & expiry
           </h4>
           <div className="grid grid-cols-2 gap-4">
+            <Input label="Emirates ID" {...register('emirates_id')} />
+            <Input label="Emirates ID expiry" type="date" {...register('emirates_id_expiry')} />
             <Input label="Visa number" {...register('visa_number')} />
-            <Input
-              label="Visa expiry"
-              type="date"
-              {...register('visa_expiry_date')}
-            />
-            <Input
-              label="Visa issued"
-              type="date"
-              {...register('visa_issued_date')}
-            />
+            <Input label="Visa expiry" type="date" {...register('visa_expiry')} />
             <Input label="Passport number" {...register('passport_number')} />
-            <Input
-              label="Passport expiry"
-              type="date"
-              {...register('passport_expiry')}
-            />
-            <Input
-              label="Emergency contact"
-              {...register('emergency_contact')}
-            />
+            <Input label="Passport expiry" type="date" {...register('passport_expiry')} />
           </div>
         </div>
       </form>

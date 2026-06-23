@@ -1,31 +1,13 @@
 import { supabase } from '../supabase';
-import type { Notification } from '../../types/database';
+import type { ActivityLog } from '../../types/database';
 
-export async function getNotifications(limit = 50): Promise<Notification[]> {
+/** No notifications table in this DB — surface the activity_log as the feed. */
+export async function getActivity(limit = 50): Promise<ActivityLog[]> {
   const { data, error } = await supabase
-    .from('notifications')
+    .from('activity_log')
     .select('*')
     .order('created_at', { ascending: false })
     .limit(limit);
-  if (error) throw error;
-  return (data as Notification[]) ?? [];
-}
-
-export async function markRead(id: string): Promise<void> {
-  const { error } = await supabase
-    .from('notifications')
-    .update({ read_at: new Date().toISOString() })
-    .eq('id', id);
-  if (error) throw error;
-}
-
-export async function markAllRead(): Promise<void> {
-  const { data: userRes } = await supabase.auth.getUser();
-  if (!userRes.user) return;
-  const { error } = await supabase
-    .from('notifications')
-    .update({ read_at: new Date().toISOString() })
-    .is('read_at', null)
-    .eq('recipient_user_id', userRes.user.id);
-  if (error) throw error;
+  if (error) return [];
+  return (data as ActivityLog[]) ?? [];
 }

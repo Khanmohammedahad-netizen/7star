@@ -7,25 +7,25 @@ import { Spinner } from '../components/ui/Spinner';
 import { EmptyState } from '../components/ui/EmptyState';
 import { CountryFlag } from '../components/shared/CountryFlag';
 import { MaterialForm } from '../components/materials/MaterialForm';
-import { getCatalog, deleteCatalogItem } from '../lib/api/materials';
+import { getMaterials, deleteMaterial } from '../lib/api/materials';
 import { formatCurrency } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 import { isAdminRole } from '../types/roles';
 import { toast } from 'sonner';
-import type { MaterialCatalogItem } from '../types/database';
+import type { Material } from '../types/database';
 
 export default function MaterialsPage() {
   const { role } = useAuth();
-  const [items, setItems] = useState<MaterialCatalogItem[]>([]);
+  const [items, setItems] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [formOpen, setFormOpen] = useState(false);
-  const [editing, setEditing] = useState<MaterialCatalogItem | null>(null);
+  const [editing, setEditing] = useState<Material | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      setItems(await getCatalog());
+      setItems(await getMaterials());
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to load');
     } finally {
@@ -37,10 +37,10 @@ export default function MaterialsPage() {
     load();
   }, [load]);
 
-  const remove = async (item: MaterialCatalogItem) => {
-    if (!confirm(`Delete ${item.name}?`)) return;
+  const remove = async (item: Material) => {
+    if (!confirm(`Delete ${item.material_name}?`)) return;
     try {
-      await deleteCatalogItem(item.id);
+      await deleteMaterial(item.id);
       toast.success('Material deleted');
       load();
     } catch (err) {
@@ -48,17 +48,15 @@ export default function MaterialsPage() {
     }
   };
 
-  const filtered = items.filter(
-    (i) =>
-      i.name.toLowerCase().includes(query.toLowerCase()) ||
-      i.sku?.toLowerCase().includes(query.toLowerCase())
+  const filtered = items.filter((i) =>
+    i.material_name.toLowerCase().includes(query.toLowerCase())
   );
 
   return (
     <div>
       <PageHeader
         title="Materials"
-        description="Inventory catalogue used across projects."
+        description="Materials used across projects."
         actions={
           <Button
             onClick={() => {
@@ -89,7 +87,7 @@ export default function MaterialsPage() {
         <EmptyState
           icon={Package}
           title={query ? 'No matching materials' : 'No materials yet'}
-          description={query ? 'Try another search.' : 'Build your catalogue.'}
+          description={query ? 'Try another search.' : 'Add your first material.'}
           action={
             !query && (
               <Button
@@ -110,10 +108,9 @@ export default function MaterialsPage() {
               <thead>
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
                   <th className="px-5 py-3 font-medium">Material</th>
-                  <th className="px-5 py-3 font-medium">SKU</th>
                   <th className="px-5 py-3 font-medium">Unit</th>
-                  <th className="px-5 py-3 text-right font-medium">Unit cost</th>
-                  <th className="px-5 py-3 text-right font-medium">Stock</th>
+                  <th className="px-5 py-3 text-right font-medium">Qty</th>
+                  <th className="px-5 py-3 text-right font-medium">Total</th>
                   <th className="px-5 py-3 font-medium">Region</th>
                   <th className="px-5 py-3" />
                 </tr>
@@ -125,20 +122,24 @@ export default function MaterialsPage() {
                     className="group border-b border-border last:border-0 hover:bg-surface-2"
                   >
                     <td className="px-5 py-3 font-medium text-foreground">
-                      {m.name}
+                      {m.material_name}
+                      {m.supplier && (
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          {m.supplier}
+                        </span>
+                      )}
                     </td>
-                    <td className="px-5 py-3 text-muted-foreground">
-                      {m.sku || '—'}
-                    </td>
-                    <td className="px-5 py-3 text-muted-foreground">{m.unit}</td>
-                    <td className="px-5 py-3 text-right tnum text-foreground">
-                      {formatCurrency(m.unit_cost)}
-                    </td>
+                    <td className="px-5 py-3 text-muted-foreground">{m.unit || '—'}</td>
                     <td className="px-5 py-3 text-right tnum text-muted-foreground">
-                      {m.stock_qty}
+                      {m.quantity}
+                    </td>
+                    <td className="px-5 py-3 text-right tnum text-foreground">
+                      {formatCurrency(
+                        m.total_cost ?? (m.quantity || 0) * (m.unit_cost ?? 0)
+                      )}
                     </td>
                     <td className="px-5 py-3">
-                      {m.country ? <CountryFlag country={m.country} /> : '—'}
+                      {m.region ? <CountryFlag region={m.region} /> : '—'}
                     </td>
                     <td className="px-5 py-3">
                       <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">

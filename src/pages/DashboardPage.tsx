@@ -9,7 +9,8 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { getVisaStatuses } from '../lib/api/employees';
+import { getEmployees } from '../lib/api/employees';
+import { computeBucket } from '../components/employees/VisaStatusBadge';
 import { useAuth } from '../contexts/AuthContext';
 import { Card } from '../components/ui/Card';
 import { PageHeader } from '../components/ui/PageHeader';
@@ -64,7 +65,7 @@ export default function DashboardPage() {
     let active = true;
     (async () => {
       const today = new Date().toISOString().slice(0, 10);
-      const [events, invoices, clients, upcomingRes, visas] = await Promise.all([
+      const [events, invoices, clients, upcomingRes, employees] = await Promise.all([
         safeCount('events'),
         safeCount('invoices'),
         safeCount('clients'),
@@ -74,7 +75,7 @@ export default function DashboardPage() {
           .gte('event_date', today)
           .order('event_date', { ascending: true })
           .limit(6),
-        getVisaStatuses().catch(() => []),
+        getEmployees().catch(() => []),
       ]);
 
       if (!active) return;
@@ -87,10 +88,18 @@ export default function DashboardPage() {
       });
       setUpcoming(upcomingRows);
       setVisaAlerts(
-        visas
-          .filter((v) =>
-            ['expired', 'critical', 'warning'].includes(v.visa_status_bucket)
-          )
+        employees
+          .map((e) => {
+            const { bucket, days } = computeBucket(e.visa_expiry);
+            return {
+              id: e.id,
+              full_name: e.full_name,
+              days_until_expiry: days ?? 9999,
+              visa_status_bucket: bucket,
+            };
+          })
+          .filter((v) => ['expired', 'critical', 'warning'].includes(v.visa_status_bucket))
+          .sort((a, b) => a.days_until_expiry - b.days_until_expiry)
           .slice(0, 6)
       );
       setLoading(false);

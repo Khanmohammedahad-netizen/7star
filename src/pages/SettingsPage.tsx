@@ -5,12 +5,11 @@ import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { getSettings, saveSettings, type AppSettings } from '../lib/settings';
-import { VAT_RATES, COUNTRY_LABEL } from '../lib/constants';
+import { VAT_RATES, REGION_LABEL } from '../lib/constants';
 import { useAuth } from '../contexts/AuthContext';
-import { hashPin } from '../lib/pin';
-import { setPinHash } from '../lib/api/personal';
+import { hashPin, setStoredPinHash } from '../lib/pin';
 import { toast } from 'sonner';
-import type { CountryCode } from '../types/database';
+import type { Region } from '../types/database';
 
 export default function SettingsPage() {
   const { user, role } = useAuth();
@@ -23,13 +22,13 @@ export default function SettingsPage() {
   };
 
   const updateBank = (
-    country: CountryCode,
+    region: Region,
     field: keyof AppSettings['bank']['UAE'],
     value: string
   ) => {
     setSettings((s) => ({
       ...s,
-      bank: { ...s.bank, [country]: { ...s.bank[country], [field]: value } },
+      bank: { ...s.bank, [region]: { ...s.bank[region], [field]: value } },
     }));
   };
 
@@ -40,7 +39,7 @@ export default function SettingsPage() {
       return;
     }
     try {
-      await setPinHash(user.id, await hashPin(newPin));
+      setStoredPinHash(await hashPin(newPin));
       setNewPin('');
       toast.success('PIN updated');
     } catch (err) {
@@ -80,9 +79,9 @@ export default function SettingsPage() {
             Fixed by jurisdiction and applied automatically.
           </p>
           <div className="flex gap-6">
-            {(Object.keys(VAT_RATES) as CountryCode[]).map((c) => (
+            {(Object.keys(VAT_RATES) as Region[]).map((c) => (
               <div key={c} className="text-sm">
-                <span className="text-muted-foreground">{COUNTRY_LABEL[c]}: </span>
+                <span className="text-muted-foreground">{REGION_LABEL[c]}: </span>
                 <span className="font-semibold text-foreground">
                   {(VAT_RATES[c] * 100).toFixed(0)}%
                 </span>
@@ -91,10 +90,10 @@ export default function SettingsPage() {
           </div>
         </Card>
 
-        {(Object.keys(settings.bank) as CountryCode[]).map((c) => (
+        {(Object.keys(settings.bank) as Region[]).map((c) => (
           <Card key={c}>
             <h3 className="mb-4 text-sm font-semibold text-foreground">
-              Bank details — {COUNTRY_LABEL[c]}
+              Bank details — {REGION_LABEL[c]}
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <Input

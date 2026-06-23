@@ -10,39 +10,24 @@ import {
   Package,
   ReceiptText,
   ExternalLink,
-  Plus,
-  X,
+  Building2,
 } from 'lucide-react';
 import { Drawer } from '../ui/Drawer';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { Spinner } from '../ui/Spinner';
-import { Avatar } from '../ui/Avatar';
-import { CallWhatsappButtons } from '../shared/CallWhatsappButtons';
 import { getProject, deleteProject } from '../../lib/api/projects';
-import { getAssignments } from '../../lib/api/employees';
-import {
-  getProjectMaterials,
-  getCatalog,
-  addProjectMaterial,
-  removeProjectMaterial,
-} from '../../lib/api/materials';
+import { getProjectMaterials } from '../../lib/api/materials';
 import { getInvoicesByProject } from '../../lib/api/invoices';
-import { PROJECT_STATUS } from '../../lib/status';
-import { COUNTRY_FLAG, CURRENCY_BY_COUNTRY } from '../../lib/constants';
+import { projectStatus } from '../../lib/status';
+import { REGION_FLAG, regionCurrency } from '../../lib/constants';
 import { formatCurrency, formatDate } from '../../lib/utils';
 import { useAuth } from '../../contexts/AuthContext';
 import { isAdminRole } from '../../types/roles';
-import type {
-  Event,
-  ProjectAssignment,
-  ProjectMaterial,
-  MaterialCatalogItem,
-  Invoice,
-} from '../../types/database';
+import type { Event, Material, Invoice, Region } from '../../types/database';
 import { toast } from 'sonner';
 
-type Tab = 'overview' | 'team' | 'materials' | 'invoices';
+type Tab = 'overview' | 'materials' | 'invoices';
 
 interface Props {
   projectId: string | null;
@@ -52,83 +37,34 @@ interface Props {
   onChanged: () => void;
 }
 
-export function ProjectDrawer({
-  projectId,
-  open,
-  onClose,
-  onEdit,
-  onChanged,
-}: Props) {
+export function ProjectDrawer({ projectId, open, onClose, onEdit, onChanged }: Props) {
   const { role } = useAuth();
   const [tab, setTab] = useState<Tab>('overview');
   const [project, setProject] = useState<Event | null>(null);
-  const [team, setTeam] = useState<ProjectAssignment[]>([]);
-  const [materials, setMaterials] = useState<ProjectMaterial[]>([]);
-  const [catalog, setCatalog] = useState<MaterialCatalogItem[]>([]);
-  const [matId, setMatId] = useState('');
-  const [matQty, setMatQty] = useState('1');
+  const [materials, setMaterials] = useState<Material[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(false);
-
-  const reloadMaterials = async () => {
-    if (!projectId) return;
-    setMaterials(await getProjectMaterials(projectId).catch(() => []));
-  };
-
-  const handleAddMaterial = async () => {
-    if (!projectId || !matId) return;
-    const item = catalog.find((c) => c.id === matId);
-    if (!item) return;
-    try {
-      await addProjectMaterial({
-        project_id: projectId,
-        material_id: matId,
-        quantity: Number(matQty) || 1,
-        unit_cost_snapshot: item.unit_cost,
-      });
-      setMatId('');
-      setMatQty('1');
-      await reloadMaterials();
-      toast.success('Material added');
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to add');
-    }
-  };
-
-  const handleRemoveMaterial = async (id: string) => {
-    try {
-      await removeProjectMaterial(id);
-      await reloadMaterials();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to remove');
-    }
-  };
 
   useEffect(() => {
     if (!open || !projectId) return;
     setLoading(true);
     setTab('overview');
     (async () => {
-      const [p, t, m, inv, cat] = await Promise.all([
+      const [p, m, inv] = await Promise.all([
         getProject(projectId),
-        getAssignments(projectId).catch(() => []),
         getProjectMaterials(projectId).catch(() => []),
         getInvoicesByProject(projectId).catch(() => []),
-        getCatalog().catch(() => []),
       ]);
       setProject(p);
-      setTeam(t);
       setMaterials(m);
       setInvoices(inv);
-      setCatalog(cat);
       setLoading(false);
     })();
   }, [open, projectId]);
 
   const handleDelete = async () => {
     if (!project) return;
-    if (!confirm(`Delete project "${project.title}"? This cannot be undone.`))
-      return;
+    if (!confirm(`Delete project "${project.title}"? This cannot be undone.`)) return;
     try {
       await deleteProject(project.id);
       toast.success('Project deleted');
@@ -139,21 +75,19 @@ export function ProjectDrawer({
     }
   };
 
-  const country = project?.country ?? (project?.region === 'saudi' ? 'SA' : 'UAE');
-  const currency = CURRENCY_BY_COUNTRY[country];
-  const meta = project ? PROJECT_STATUS[project.status] : null;
+  const region: Region = project?.region === 'SAUDI' ? 'SAUDI' : 'UAE';
+  const currency = regionCurrency(region);
+  const meta = project ? projectStatus(project.status) : null;
   const materialsTotal = materials.reduce(
-    (s, m) => s + m.quantity * m.unit_cost_snapshot,
+    (s, m) => s + (m.total_cost ?? (m.quantity || 0) * (m.unit_cost ?? m.unit_price ?? 0)),
     0
   );
 
-  const tabs: { id: Tab; label: string; icon: typeof Users; count?: number }[] =
-    [
-      { id: 'overview', label: 'Overview', icon: CalendarRange },
-      { id: 'team', label: 'Team', icon: Users, count: team.length },
-      { id: 'materials', label: 'Materials', icon: Package, count: materials.length },
-      { id: 'invoices', label: 'Invoices', icon: ReceiptText, count: invoices.length },
-    ];
+  const tabs: { id: Tab; label: string; count?: number }[] = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'materials', label: 'Materials', count: materials.length },
+    { id: 'invoices', label: 'Invoices', count: invoices.length },
+  ];
 
   return (
     <Drawer open={open} onClose={onClose} width={480}>
@@ -163,11 +97,10 @@ export function ProjectDrawer({
         </div>
       ) : (
         <div className="flex h-full flex-col">
-          {/* Header */}
           <div className="border-b border-border p-6 pr-12">
             <div className="flex items-center gap-2">
               <span className="text-lg" aria-hidden>
-                {COUNTRY_FLAG[country]}
+                {REGION_FLAG[region]}
               </span>
               {meta && <Badge variant={meta.badge} dot>{meta.label}</Badge>}
             </div>
@@ -201,23 +134,18 @@ export function ProjectDrawer({
             </div>
           </div>
 
-          {/* Tabs */}
           <div className="flex border-b border-border px-3">
             {tabs.map((t) => (
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
                 className={`relative flex items-center gap-1.5 px-3 py-3 text-sm font-medium transition-colors ${
-                  tab === t.id
-                    ? 'text-primary'
-                    : 'text-muted-foreground hover:text-foreground'
+                  tab === t.id ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {t.label}
                 {t.count ? (
-                  <span className="rounded-full bg-surface-2 px-1.5 text-[11px]">
-                    {t.count}
-                  </span>
+                  <span className="rounded-full bg-surface-2 px-1.5 text-[11px]">{t.count}</span>
                 ) : null}
                 {tab === t.id && (
                   <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-primary" />
@@ -226,7 +154,6 @@ export function ProjectDrawer({
             ))}
           </div>
 
-          {/* Body */}
           <div className="flex-1 overflow-y-auto p-6">
             {tab === 'overview' && (
               <dl className="space-y-5">
@@ -234,32 +161,23 @@ export function ProjectDrawer({
                   {formatDate(project.event_date)}
                   {project.end_date && ` → ${formatDate(project.end_date)}`}
                 </Row>
-                {project.location && (
-                  <Row icon={MapPin} label="Location">
-                    <span>{project.location}</span>
-                    {project.location_lat && project.location_lng && (
-                      <a
-                        href={`https://maps.google.com/?q=${project.location_lat},${project.location_lng}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="ml-2 text-primary hover:underline"
-                      >
-                        Open in Maps
-                      </a>
-                    )}
-                  </Row>
+                {project.venue_name && (
+                  <Row icon={Building2} label="Venue">{project.venue_name}</Row>
                 )}
-                {project.budget != null && (
+                {project.location && (
+                  <Row icon={MapPin} label="Location">{project.location}</Row>
+                )}
+                {project.type && <Row icon={Package} label="Type">{project.type}</Row>}
+                {project.expected_guests != null && (
+                  <Row icon={Users} label="Expected guests">{project.expected_guests}</Row>
+                )}
+                {project.budget_total != null && (
                   <Row icon={Wallet} label="Budget">
-                    <span className="tnum">
-                      {formatCurrency(project.budget, currency)}
-                    </span>
+                    <span className="tnum">{formatCurrency(project.budget_total, currency)}</span>
                   </Row>
                 )}
                 {project.manager?.full_name && (
-                  <Row icon={Users} label="Manager">
-                    {project.manager.full_name}
-                  </Row>
+                  <Row icon={Users} label="Manager">{project.manager.full_name}</Row>
                 )}
                 {project.description && (
                   <div>
@@ -274,44 +192,11 @@ export function ProjectDrawer({
               </dl>
             )}
 
-            {tab === 'team' && (
-              <div className="space-y-3">
-                {team.length === 0 ? (
-                  <p className="py-8 text-center text-sm text-muted-foreground">
-                    No team members assigned yet.
-                  </p>
-                ) : (
-                  team.map((a) => (
-                    <div
-                      key={a.id}
-                      className="flex items-center gap-3 rounded-lg border border-border p-3"
-                    >
-                      <Avatar name={a.employee?.full_name} size="sm" />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-foreground">
-                          {a.employee?.full_name}
-                          {a.is_manager && (
-                            <Badge variant="primary" size="sm" className="ml-2">
-                              Manager
-                            </Badge>
-                          )}
-                        </p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {a.role_on_project || a.employee?.role}
-                        </p>
-                      </div>
-                      <CallWhatsappButtons phone={a.employee?.phone} />
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-
             {tab === 'materials' && (
               <div>
                 {materials.length === 0 ? (
-                  <p className="py-6 text-center text-sm text-muted-foreground">
-                    No materials allocated.
+                  <p className="py-8 text-center text-sm text-muted-foreground">
+                    No materials recorded for this project.
                   </p>
                 ) : (
                   <>
@@ -321,32 +206,20 @@ export function ProjectDrawer({
                           <th className="pb-2 font-medium">Material</th>
                           <th className="pb-2 text-right font-medium">Qty</th>
                           <th className="pb-2 text-right font-medium">Total</th>
-                          <th className="pb-2" />
                         </tr>
                       </thead>
                       <tbody>
                         {materials.map((m) => (
-                          <tr key={m.id} className="group border-b border-border">
-                            <td className="py-2 text-foreground">
-                              {m.material?.name ?? '—'}
-                            </td>
+                          <tr key={m.id} className="border-b border-border">
+                            <td className="py-2 text-foreground">{m.material_name}</td>
                             <td className="py-2 text-right tnum text-muted-foreground">
-                              {m.quantity} {m.material?.unit}
+                              {m.quantity} {m.unit}
                             </td>
                             <td className="py-2 text-right tnum text-foreground">
                               {formatCurrency(
-                                m.quantity * m.unit_cost_snapshot,
+                                m.total_cost ?? (m.quantity || 0) * (m.unit_cost ?? 0),
                                 currency
                               )}
-                            </td>
-                            <td className="py-2 pl-2 text-right">
-                              <button
-                                onClick={() => handleRemoveMaterial(m.id)}
-                                aria-label="Remove material"
-                                className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100 cursor-pointer"
-                              >
-                                <X className="h-3.5 w-3.5" />
-                              </button>
                             </td>
                           </tr>
                         ))}
@@ -354,43 +227,13 @@ export function ProjectDrawer({
                     </table>
                     <div className="mt-3 flex justify-between border-t border-border pt-3 text-sm font-semibold">
                       <span>Total</span>
-                      <span className="tnum">
-                        {formatCurrency(materialsTotal, currency)}
-                      </span>
+                      <span className="tnum">{formatCurrency(materialsTotal, currency)}</span>
                     </div>
                   </>
                 )}
-
-                {/* Add material */}
-                <div className="mt-5 flex items-end gap-2 border-t border-border pt-4">
-                  <div className="flex-1">
-                    <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                      Add material
-                    </label>
-                    <select
-                      value={matId}
-                      onChange={(e) => setMatId(e.target.value)}
-                      className="h-9 w-full rounded-lg border border-input bg-surface px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      <option value="">Select…</option>
-                      {catalog.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name} ({formatCurrency(c.unit_cost, currency)}/{c.unit})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <input
-                    type="number"
-                    min="1"
-                    value={matQty}
-                    onChange={(e) => setMatQty(e.target.value)}
-                    className="h-9 w-16 rounded-lg border border-input bg-surface px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  />
-                  <Button size="sm" onClick={handleAddMaterial} disabled={!matId}>
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
+                <p className="mt-4 text-xs text-muted-foreground">
+                  Manage materials from the Materials page.
+                </p>
               </div>
             )}
 
@@ -404,15 +247,15 @@ export function ProjectDrawer({
                   invoices.map((inv) => (
                     <Link
                       key={inv.id}
-                      to={`/invoices/${inv.id}`}
+                      to="/invoices"
                       className="flex items-center justify-between rounded-lg border border-border p-3 transition-colors hover:bg-surface-2"
                     >
                       <div>
                         <p className="text-sm font-medium text-foreground">
-                          {inv.invoice_number}
+                          {inv.invoice_number ?? inv.doc_number}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {formatCurrency(inv.total_amount, currency)}
+                          {formatCurrency(inv.total_amount ?? 0, currency)}
                         </p>
                       </div>
                       <Badge

@@ -1,25 +1,27 @@
 import { supabase } from '../supabase';
-import type { Event, EventStatus } from '../../types/database';
+import type { Event, Region } from '../../types/database';
 
 export interface ProjectInput {
   title: string;
   description?: string | null;
-  region: 'uae' | 'saudi';
-  country?: 'UAE' | 'SA' | null;
+  region: Region;
   event_date: string;
   end_date?: string | null;
-  status: EventStatus;
+  status: string;
   manager_id?: string | null;
   client_id?: string | null;
-  representative_id?: string | null;
-  budget?: number | null;
   location?: string | null;
+  venue_name?: string | null;
+  type?: string | null;
+  budget_total?: number | null;
+  expected_guests?: number | null;
+  notes?: string | null;
 }
 
 const SELECT = `
   *,
-  client:clients(id, name, country, phone, email),
-  manager:profiles!events_manager_id_fkey(id, full_name, contact_number, role)
+  client:clients(id, name, company_name, region),
+  manager:profiles!events_manager_id_fkey(id, full_name)
 `;
 
 export async function getProjects(): Promise<Event[]> {

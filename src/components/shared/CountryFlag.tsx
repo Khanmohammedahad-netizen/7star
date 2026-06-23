@@ -1,24 +1,24 @@
-import { COUNTRY_FLAG, COUNTRY_LABEL } from '../../lib/constants';
-import type { CountryCode } from '../../types/database';
+import { REGION_FLAG, REGION_LABEL } from '../../lib/constants';
+import type { Region } from '../../types/database';
 
 interface Props {
-  country: CountryCode;
+  region: Region;
   showLabel?: boolean;
   className?: string;
 }
 
-export function CountryFlag({ country, showLabel = false, className = '' }: Props) {
+/** Region flag (kept the filename for import stability). */
+export function CountryFlag({ region, showLabel = false, className = '' }: Props) {
+  const safe: Region = region === 'SAUDI' ? 'SAUDI' : 'UAE';
   return (
     <span className={`inline-flex items-center gap-1.5 ${className}`}>
       <span aria-hidden className="text-base leading-none">
-        {COUNTRY_FLAG[country]}
+        {REGION_FLAG[safe]}
       </span>
       {showLabel && (
-        <span className="text-sm text-muted-foreground">
-          {COUNTRY_LABEL[country]}
-        </span>
+        <span className="text-sm text-muted-foreground">{REGION_LABEL[safe]}</span>
       )}
-      <span className="sr-only">{COUNTRY_LABEL[country]}</span>
+      <span className="sr-only">{REGION_LABEL[safe]}</span>
     </span>
   );
 }

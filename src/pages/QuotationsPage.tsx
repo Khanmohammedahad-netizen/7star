@@ -14,21 +14,18 @@ import {
   deleteQuotation,
   convertQuotationToInvoice,
 } from '../lib/api/quotations';
+import { regionCurrency, VAT_RATES } from '../lib/constants';
 import { formatCurrency, formatDate } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 import { isAdminRole } from '../types/roles';
 import { toast } from 'sonner';
-import type { DocStatus, Quotation } from '../types/database';
+import type { Quotation } from '../types/database';
 
-const statusVariant: Record<DocStatus, 'neutral' | 'info' | 'success' | 'error' | 'warning'> = {
+const statusVariant: Record<string, 'neutral' | 'info' | 'success' | 'error'> = {
   draft: 'neutral',
   sent: 'info',
   accepted: 'success',
   rejected: 'error',
-  expired: 'warning',
-  paid: 'success',
-  overdue: 'error',
-  cancelled: 'neutral',
 };
 
 export default function QuotationsPage() {
@@ -54,23 +51,22 @@ export default function QuotationsPage() {
   }, [load]);
 
   const download = async (q: Quotation) => {
+    const currency = regionCurrency(q.region);
     await downloadDocumentPdf({
       kind: 'Quotation',
-      number: q.quote_number,
-      country: q.country,
-      currency: q.currency,
-      issueDate: q.issue_date,
+      number: q.quotation_number ?? 'QUOTATION',
+      region: q.region,
+      currency,
+      issueDate: q.quotation_date ?? q.created_at,
       secondDateLabel: 'Valid until',
-      secondDate: q.valid_until,
+      secondDate: q.quotation_date ?? q.created_at,
       status: q.status,
       clientName: q.client?.name ?? 'Client',
-      items: q.line_items ?? [],
-      subtotal: q.subtotal,
-      vatRate: q.vat_rate,
-      vatAmount: q.vat_amount,
-      total: q.total,
-      terms: q.terms,
-      notes: q.notes,
+      items: q.items ?? [],
+      subtotal: q.net_amount ?? 0,
+      vatRate: VAT_RATES[q.region],
+      vatAmount: (q.total_amount ?? 0) - (q.net_amount ?? 0),
+      total: q.total_amount ?? 0,
     });
   };
 
@@ -85,7 +81,7 @@ export default function QuotationsPage() {
   };
 
   const remove = async (q: Quotation) => {
-    if (!confirm(`Delete ${q.quote_number}?`)) return;
+    if (!confirm(`Delete ${q.quotation_number}?`)) return;
     try {
       await deleteQuotation(q.id);
       toast.success('Deleted');
@@ -140,7 +136,7 @@ export default function QuotationsPage() {
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
                   <th className="px-5 py-3 font-medium">Number</th>
                   <th className="px-5 py-3 font-medium">Client</th>
-                  <th className="px-5 py-3 font-medium">Valid until</th>
+                  <th className="px-5 py-3 font-medium">Date</th>
                   <th className="px-5 py-3 text-right font-medium">Total</th>
                   <th className="px-5 py-3 font-medium">Status</th>
                   <th className="px-5 py-3" />
@@ -150,20 +146,18 @@ export default function QuotationsPage() {
                 {rows.map((q) => (
                   <tr key={q.id} className="group border-b border-border last:border-0 hover:bg-surface-2">
                     <td className="px-5 py-3">
-                      <span className="mr-2"><CountryFlag country={q.country} /></span>
-                      <span className="font-medium text-foreground">{q.quote_number}</span>
+                      <span className="mr-2"><CountryFlag region={q.region} /></span>
+                      <span className="font-medium text-foreground">{q.quotation_number}</span>
                     </td>
+                    <td className="px-5 py-3 text-muted-foreground">{q.client?.name ?? '—'}</td>
                     <td className="px-5 py-3 text-muted-foreground">
-                      {q.client?.name ?? '—'}
-                    </td>
-                    <td className="px-5 py-3 text-muted-foreground">
-                      {formatDate(q.valid_until)}
+                      {q.quotation_date ? formatDate(q.quotation_date) : '—'}
                     </td>
                     <td className="px-5 py-3 text-right tnum text-foreground">
-                      {formatCurrency(q.total, q.currency)}
+                      {formatCurrency(q.total_amount ?? 0, regionCurrency(q.region))}
                     </td>
                     <td className="px-5 py-3">
-                      <Badge variant={statusVariant[q.status]}>{q.status}</Badge>
+                      <Badge variant={statusVariant[q.status] ?? 'neutral'}>{q.status}</Badge>
                     </td>
                     <td className="px-5 py-3">
                       <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">

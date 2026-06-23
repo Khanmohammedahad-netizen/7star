@@ -1,4 +1,4 @@
-import type { CountryCode } from '../types/database';
+import type { Region } from '../types/database';
 
 export interface BankDetails {
   bankName: string;
@@ -9,7 +9,7 @@ export interface BankDetails {
 
 export interface AppSettings {
   companyName: string;
-  bank: Record<CountryCode, BankDetails>;
+  bank: Record<Region, BankDetails>;
   whatsappEnabled: boolean;
   brevoInvoiceTemplate: string;
   brevoVisaTemplate: string;
@@ -21,7 +21,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   companyName: 'Seven Star Management',
   bank: {
     UAE: { bankName: '', accountName: 'Seven Star Management', accountNumber: '', iban: '' },
-    SA: { bankName: '', accountName: 'Seven Star Management', accountNumber: '', iban: '' },
+    SAUDI: { bankName: '', accountName: 'Seven Star Management', accountNumber: '', iban: '' },
   },
   whatsappEnabled: false,
   brevoInvoiceTemplate: '',

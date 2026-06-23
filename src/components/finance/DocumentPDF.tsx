@@ -1,17 +1,13 @@
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import { formatCurrency, formatDate } from '../../lib/utils';
-import { COUNTRY_LABEL } from '../../lib/constants';
+import { REGION_LABEL } from '../../lib/constants';
 import { getSettings } from '../../lib/settings';
-import type {
-  CountryCode,
-  CurrencyCode,
-  LineItem,
-} from '../../types/database';
+import type { Region, CurrencyCode, DocItem } from '../../types/database';
 
 export interface PdfDoc {
   kind: 'Invoice' | 'Quotation';
   number: string;
-  country: CountryCode;
+  region: Region;
   currency: CurrencyCode;
   issueDate: string;
   secondDateLabel: string;
@@ -19,7 +15,7 @@ export interface PdfDoc {
   status: string;
   clientName: string;
   clientContact?: string;
-  items: LineItem[];
+  items: DocItem[];
   subtotal: number;
   vatRate: number;
   vatAmount: number;
@@ -87,7 +83,7 @@ const s = StyleSheet.create({
 });
 
 export function DocumentPDF({ doc }: { doc: PdfDoc }) {
-  const bank = getSettings().bank[doc.country];
+  const bank = getSettings().bank[doc.region];
   const hasBank = bank && (bank.bankName || bank.iban || bank.accountNumber);
   return (
     <Document>
@@ -97,7 +93,7 @@ export function DocumentPDF({ doc }: { doc: PdfDoc }) {
             <Text style={s.logo}>★</Text>
             <View>
               <Text style={s.company}>Seven Star Management</Text>
-              <Text style={s.muted}>{COUNTRY_LABEL[doc.country]}</Text>
+              <Text style={s.muted}>{REGION_LABEL[doc.region]}</Text>
             </View>
           </View>
           <View>
@@ -135,12 +131,12 @@ export function DocumentPDF({ doc }: { doc: PdfDoc }) {
           <Text style={s.cPrice}>Unit price</Text>
           <Text style={s.cTotal}>Total</Text>
         </View>
-        {doc.items.map((it) => (
-          <View style={s.td} key={it.id || it.position}>
+        {doc.items.map((it, idx) => (
+          <View style={s.td} key={it.serial_no ?? idx}>
             <Text style={s.cDesc}>{it.description}</Text>
-            <Text style={s.cQty}>{it.qty}</Text>
-            <Text style={s.cPrice}>{formatCurrency(it.unit_price, doc.currency)}</Text>
-            <Text style={s.cTotal}>{formatCurrency(it.total, doc.currency)}</Text>
+            <Text style={s.cQty}>{it.quantity}</Text>
+            <Text style={s.cPrice}>{formatCurrency(it.rate, doc.currency)}</Text>
+            <Text style={s.cTotal}>{formatCurrency(it.amount, doc.currency)}</Text>
           </View>
         ))}
 
@@ -172,7 +168,7 @@ export function DocumentPDF({ doc }: { doc: PdfDoc }) {
           {doc.terms ? <Text>Terms: {doc.terms}</Text> : null}
           {doc.notes ? <Text>Notes: {doc.notes}</Text> : null}
           <Text style={{ marginTop: 12 }}>
-            Seven Star Management · {COUNTRY_LABEL[doc.country]} · Thank you for
+            Seven Star Management · {REGION_LABEL[doc.region]} · Thank you for
             your business.
           </Text>
         </View>

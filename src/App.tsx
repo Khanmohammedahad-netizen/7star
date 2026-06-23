@@ -19,7 +19,6 @@ const QuotationsPage = lazy(() => import('./pages/QuotationsPage'));
 const InvoicesPage = lazy(() => import('./pages/InvoicesPage'));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
 const AccountsPage = lazy(() => import('./pages/admin/AccountsPage'));
-const AccountDetailPage = lazy(() => import('./pages/admin/AccountDetailPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 
 const DIRECTORY_ROLES = [
@@ -112,7 +111,6 @@ export default function App() {
             }
           >
             <Route index element={<AccountsPage />} />
-            <Route path=":id" element={<AccountDetailPage />} />
           </Route>
           <Route path="/admin/notifications" element={<NotificationsPage />} />
           <Route

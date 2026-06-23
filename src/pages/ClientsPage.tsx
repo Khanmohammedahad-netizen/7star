@@ -94,14 +94,13 @@ export default function ClientsPage() {
               >
                 <div className="flex items-start justify-between">
                   <h3 className="font-semibold text-foreground">{c.name}</h3>
-                  <CountryFlag country={c.country} />
+                  <CountryFlag region={c.region} />
                 </div>
                 <p className="mt-1 truncate text-sm text-muted-foreground">
-                  {c.email || c.phone || 'No contact info'}
+                  {c.company_name || c.email || 'No contact info'}
                 </p>
-                <p className="mt-3 text-xs text-muted-foreground">
-                  {c.representatives?.length ?? 0} representative
-                  {(c.representatives?.length ?? 0) === 1 ? '' : 's'}
+                <p className="mt-3 truncate text-xs text-muted-foreground">
+                  {c.representative_name || 'No representative'}
                 </p>
               </button>
             </Card>
