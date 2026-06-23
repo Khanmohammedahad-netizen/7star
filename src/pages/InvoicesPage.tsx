@@ -71,24 +71,18 @@ export default function InvoicesPage() {
   const download = async (inv: Invoice) => {
     const full = await getInvoice(inv.id);
     if (!full) return;
-    const currency = regionCurrency(full.region);
     await downloadDocumentPdf({
-      kind: 'Invoice',
+      kind: 'Tax Invoice',
       number: full.invoice_number ?? full.doc_number ?? 'INVOICE',
       region: full.region,
-      currency,
-      issueDate: full.issue_date ?? full.invoice_date ?? full.created_at,
-      secondDateLabel: 'Due date',
-      secondDate: full.due_date ?? '',
-      status: full.status,
+      currency: regionCurrency(full.region),
+      date: full.issue_date ?? full.invoice_date ?? full.created_at,
       clientName: full.client_name ?? full.client?.name ?? 'Client',
-      clientContact: full.client_contact ?? undefined,
       items: full.line_items ?? [],
-      subtotal: full.net_amount ?? full.subtotal ?? 0,
+      net: full.net_amount ?? full.subtotal ?? 0,
       vatRate: VAT_RATES[full.region],
       vatAmount: full.vat_amount ?? 0,
       total: full.total_amount ?? full.total ?? 0,
-      notes: full.notes,
     });
   };
 

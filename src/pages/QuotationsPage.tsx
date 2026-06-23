@@ -51,19 +51,15 @@ export default function QuotationsPage() {
   }, [load]);
 
   const download = async (q: Quotation) => {
-    const currency = regionCurrency(q.region);
     await downloadDocumentPdf({
       kind: 'Quotation',
       number: q.quotation_number ?? 'QUOTATION',
       region: q.region,
-      currency,
-      issueDate: q.quotation_date ?? q.created_at,
-      secondDateLabel: 'Valid until',
-      secondDate: q.quotation_date ?? q.created_at,
-      status: q.status,
+      currency: regionCurrency(q.region),
+      date: q.quotation_date ?? q.created_at,
       clientName: q.client?.name ?? 'Client',
       items: q.items ?? [],
-      subtotal: q.net_amount ?? 0,
+      net: q.net_amount ?? 0,
       vatRate: VAT_RATES[q.region],
       vatAmount: (q.total_amount ?? 0) - (q.net_amount ?? 0),
       total: q.total_amount ?? 0,
