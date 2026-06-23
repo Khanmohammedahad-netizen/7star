@@ -15,7 +15,11 @@ export function PageHeader({ title, description, actions }: PageHeaderProps) {
           <p className="mt-1 text-sm text-muted-foreground">{description}</p>
         )}
       </div>
-      {actions && <div className="flex items-center gap-2">{actions}</div>}
+      {actions && (
+        <div className="flex flex-col gap-2 xs:flex-row xs:items-center xs:gap-2 sm:flex-row sm:gap-2">
+          {actions}
+        </div>
+      )}
     </div>
   );
 }

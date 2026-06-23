@@ -131,49 +131,100 @@ export default function AccountsPage() {
       ) : entries.length === 0 ? (
         <EmptyState icon={Wallet} title="No entries yet" description="Add your first ledger entry above." />
       ) : (
-        <Card padding="none" className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
-                  <th className="px-5 py-3 font-medium">Date</th>
-                  <th className="px-5 py-3 font-medium">Description</th>
-                  <th className="px-5 py-3 text-right font-medium">Credit</th>
-                  <th className="px-5 py-3 text-right font-medium">Debit</th>
-                  <th className="px-5 py-3" />
-                </tr>
-              </thead>
-              <tbody>
-                {entries.map((e) => (
-                  <tr key={e.id} className="group border-b border-border last:border-0">
-                    <td className="px-5 py-3 text-muted-foreground">{formatDate(e.entry_date)}</td>
-                    <td className="px-5 py-3 text-foreground">
-                      {e.description || '—'}
-                      {e.mode_of_payment && (
-                        <span className="ml-2 text-xs text-muted-foreground">{e.mode_of_payment}</span>
-                      )}
-                    </td>
-                    <td className="px-5 py-3 text-right tnum text-success">
-                      {e.credit ? formatCurrency(e.credit, 'AED') : '—'}
-                    </td>
-                    <td className="px-5 py-3 text-right tnum text-destructive">
-                      {e.debit ? formatCurrency(e.debit, 'AED') : '—'}
-                    </td>
-                    <td className="px-5 py-3 text-right">
-                      <button
-                        onClick={() => remove(e.id)}
-                        className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100 cursor-pointer"
-                        aria-label="Delete"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </td>
+        <div className="space-y-4">
+          {/* Desktop Table */}
+          <Card padding="none" className="hidden md:block overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
+                    <th className="px-5 py-3 font-medium">Date</th>
+                    <th className="px-5 py-3 font-medium">Description</th>
+                    <th className="px-5 py-3 text-right font-medium">Credit</th>
+                    <th className="px-5 py-3 text-right font-medium">Debit</th>
+                    <th className="px-5 py-3" />
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {entries.map((e) => (
+                    <tr key={e.id} className="group border-b border-border last:border-0">
+                      <td className="px-5 py-3 text-muted-foreground">{formatDate(e.entry_date)}</td>
+                      <td className="px-5 py-3 text-foreground">
+                        {e.description || '—'}
+                        {e.mode_of_payment && (
+                          <span className="ml-2 text-xs text-muted-foreground">{e.mode_of_payment}</span>
+                        )}
+                      </td>
+                      <td className="px-5 py-3 text-right tnum text-success">
+                        {e.credit ? formatCurrency(e.credit, 'AED') : '—'}
+                      </td>
+                      <td className="px-5 py-3 text-right tnum text-destructive">
+                        {e.debit ? formatCurrency(e.debit, 'AED') : '—'}
+                      </td>
+                      <td className="px-5 py-3 text-right">
+                        <button
+                          onClick={() => remove(e.id)}
+                          className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100 cursor-pointer"
+                          aria-label="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+
+          {/* Mobile Cards */}
+          <div className="md:hidden flex flex-col gap-3">
+            {entries.map((e) => (
+              <Card key={e.id} padding="md" className="border border-border">
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-muted-foreground mb-1">Date</p>
+                      <p className="font-semibold text-foreground">{formatDate(e.entry_date)}</p>
+                    </div>
+                    <button
+                      onClick={() => remove(e.id)}
+                      className="text-muted-foreground hover:text-destructive transition-colors p-1"
+                      aria-label="Delete"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Description</p>
+                    <p className="font-medium text-foreground truncate">
+                      {e.description || '—'}
+                    </p>
+                    {e.mode_of_payment && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Payment: {e.mode_of_payment}
+                      </p>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Credit</p>
+                      <p className="font-semibold tnum text-success">
+                        {e.credit ? formatCurrency(e.credit, 'AED') : '—'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Debit</p>
+                      <p className="font-semibold tnum text-destructive">
+                        {e.debit ? formatCurrency(e.debit, 'AED') : '—'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ))}
           </div>
-        </Card>
+        </div>
       )}
     </div>
   );

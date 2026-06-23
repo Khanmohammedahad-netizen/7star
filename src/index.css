@@ -163,6 +163,71 @@
   color: inherit;
 }
 
+/* Mobile responsiveness for FullCalendar */
+@media (max-width: 767px) {
+  .fc-theme .fc .fc-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .fc-theme .fc .fc-toolbar-chunk {
+    width: 100%;
+    display: flex;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .fc-theme .fc .fc-toolbar-title {
+    width: 100%;
+    text-align: center;
+    margin-bottom: 0.25rem;
+  }
+  .fc-theme .fc .fc-button {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.75rem;
+    flex: 1;
+    min-width: 60px;
+  }
+  .fc-theme .fc .fc-daygrid {
+    font-size: 0.75rem;
+  }
+  .fc-theme .fc .fc-col-header-cell {
+    padding: 0.25rem 0;
+  }
+  .fc-theme .fc .fc-daygrid-day-number {
+    padding: 0.25rem;
+    font-size: 0.65rem;
+  }
+  .fc-theme .fc .fc-daygrid-day-frame {
+    min-height: 60px;
+  }
+  .fc-theme .fc .fc-event {
+    padding: 0px 2px;
+    font-size: 0.65rem;
+  }
+  
+  /* Ensure no horizontal overflow on mobile */
+  html,
+  body {
+    overflow-x: hidden;
+  }
+  .fc-theme .fc {
+    overflow-x: auto;
+    /* Fallback, but shouldn't be needed with proper CSS */
+  }
+}
+
+/* Extra small screens - responsive sizing */
+@media (max-width: 640px) {
+  .fc-theme .fc .fc-button {
+    padding: 0.3rem 0.4rem;
+    font-size: 0.7rem;
+  }
+  .fc-theme .fc .fc-daygrid-day-frame {
+    min-height: 50px;
+  }
+}
+
 @layer utilities {
   .glass {
     background-color: rgb(var(--surface) / 0.72);
