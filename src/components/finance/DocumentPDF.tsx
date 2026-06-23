@@ -159,7 +159,7 @@ function Footer({ email }: { email: string }) {
 function ItemsTable({ doc }: { doc: PdfDoc }) {
   const vatPct = `${(doc.vatRate * 100).toFixed(0)}% Vat`;
   const cur = doc.currency;
-  const MIN_ROWS = 15;
+  const MIN_ROWS = doc.kind === 'Tax Invoice' ? 10 : 15;
   const emptyRows = Math.max(0, MIN_ROWS - doc.items.length);
   return (
     <>
@@ -257,7 +257,7 @@ export function DocumentPDF({ doc }: { doc: PdfDoc }) {
 
       {isQuote && (
         <Page size="A4" style={s.page}>
-          <Text style={[s.title, { marginLeft: 0, textAlign: 'center' }]}>Quotation</Text>
+          <Header title="Quotation" logo={logo} />
           <ClientBlock clientName={doc.clientName} element={doc.element} />
           <Meta doc={doc} />
 
