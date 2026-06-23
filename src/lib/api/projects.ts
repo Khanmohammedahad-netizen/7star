@@ -18,10 +18,11 @@ export interface ProjectInput {
   notes?: string | null;
 }
 
+// Note: events.manager_id has no FK to profiles in this DB, so it can't be
+// embedded. Manager name is resolved separately where needed.
 const SELECT = `
   *,
-  client:clients(id, name, company_name, region),
-  manager:profiles!events_manager_id_fkey(id, full_name)
+  client:clients(id, name, company_name, region)
 `;
 
 export async function getProjects(): Promise<Event[]> {

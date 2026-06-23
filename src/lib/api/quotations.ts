@@ -134,6 +134,8 @@ export async function convertQuotationToInvoice(id: string): Promise<string> {
       due_date: due.toISOString().slice(0, 10),
       line_items: q.items ?? [],
       net_amount: q.net_amount,
+      vat_amount: (q.total_amount ?? 0) - (q.net_amount ?? 0),
+      subtotal: q.net_amount,
       total_amount: q.total_amount,
       total: q.total_amount,
       status: 'draft',
