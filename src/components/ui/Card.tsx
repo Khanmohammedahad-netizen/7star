@@ -5,6 +5,7 @@ interface CardProps {
   className?: string;
   padding?: 'none' | 'sm' | 'md' | 'lg';
   hover?: boolean;
+  onClick?: () => void;
 }
 
 export function Card({
@@ -12,6 +13,7 @@ export function Card({
   className = '',
   padding = 'md',
   hover = false,
+  onClick,
 }: CardProps) {
   const paddings = {
     none: '',
@@ -22,9 +24,11 @@ export function Card({
 
   return (
     <div
+      onClick={onClick}
       className={cn(
         'bg-surface rounded-xl border border-border shadow-soft',
         hover && 'transition-shadow duration-200 hover:shadow-card',
+        onClick && 'cursor-pointer',
         paddings[padding],
         className
       )}

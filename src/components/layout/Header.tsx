@@ -15,6 +15,7 @@ export function Header({ onMenuClick }: HeaderProps) {
   const { profile, role, signOut } = useAuth();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [menuWidth, setMenuWidth] = useState(224);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -25,6 +26,12 @@ export function Header({ onMenuClick }: HeaderProps) {
     document.addEventListener('mousedown', onClick);
     return () => document.removeEventListener('mousedown', onClick);
   }, []);
+
+  useEffect(() => {
+    if (!menuOpen || !ref.current) return;
+    const anchorRight = ref.current.getBoundingClientRect().right;
+    setMenuWidth(Math.min(224, anchorRight - 12));
+  }, [menuOpen]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -57,7 +64,10 @@ export function Header({ onMenuClick }: HeaderProps) {
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-xl border border-border bg-surface shadow-lift animate-slide-up">
+            <div
+              className="absolute right-0 z-50 mt-2 overflow-hidden rounded-xl border border-border bg-surface shadow-lift animate-slide-up"
+              style={{ width: menuWidth }}
+            >
               <div className="border-b border-border px-4 py-3">
                 <p className="truncate text-sm font-medium text-foreground">
                   {profile?.full_name || 'User'}

@@ -10,7 +10,14 @@ export function NotificationBell() {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<ActivityLog[]>([]);
+  const [panelWidth, setPanelWidth] = useState(320);
   const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open || !ref.current) return;
+    const anchorRight = ref.current.getBoundingClientRect().right;
+    setPanelWidth(Math.min(320, anchorRight - 12));
+  }, [open]);
 
   useEffect(() => {
     if (!user) return;
@@ -47,7 +54,10 @@ export function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-xl border border-border bg-surface shadow-lift animate-slide-up">
+        <div
+          className="absolute right-0 z-50 mt-2 overflow-hidden rounded-xl border border-border bg-surface shadow-lift animate-slide-up"
+          style={{ width: panelWidth }}
+        >
           <div className="border-b border-border px-4 py-3">
             <span className="text-sm font-semibold text-foreground">Activity</span>
           </div>
