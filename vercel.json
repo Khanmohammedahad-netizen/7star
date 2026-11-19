@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api-backend/:path*",
-      "destination": "http://20.203.122.137:8000/:path*"
+      "destination": "https://hills-dual-lecture-core.trycloudflare.com/:path*"
     },
     {
       "source": "/(.*)",
